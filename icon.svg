@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="110" fill="#111827"/>
+<text x="256" y="245" font-family="Arial,sans-serif" font-size="92" font-weight="700" text-anchor="middle" fill="white">C</text>
+<path d="M145 286h222v24H145z" fill="white"/>
+<rect x="319" y="334" width="86" height="48" rx="18" fill="white"/>
+<text x="362" y="366" font-family="Arial,sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#111827">GW</text>
+</svg>

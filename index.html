@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>C-TOOL</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-row">
+      <div>
+        <h1>C-TOOL</h1>
+        <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
+      </div>
+      <div class="version">Ver.1</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="homeView" class="view active">
+      <div class="grid">
+        <button class="menu-card" data-view="rangeView">
+          <span class="icon">📐</span>
+          <span>レンジ変換</span>
+          <small>4–20mA / 1–5V</small>
+        </button>
+        <button class="menu-card" data-view="numView">
+          <span class="icon">🔢</span>
+          <span>進数変換</span>
+          <small>BIN / DEC / HEX</small>
+        </button>
+        <button class="menu-card" data-view="heatView">
+          <span class="icon">🔥</span>
+          <span>熱量演算</span>
+          <small>流量 × 温度差</small>
+        </button>
+        <button class="menu-card" data-view="unitView">
+          <span class="icon">🔁</span>
+          <span>単位変換</span>
+          <small>圧力 / 温度 / 流量</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="rangeView" class="view">
+      <div class="section-head">
+        <button class="back-btn" data-view="homeView">←</button>
+        <div><h2>レンジ変換</h2><p>任意レンジ・負数・小数対応</p></div>
+      </div>
+
+      <div class="panel">
+        <label>変換方向</label>
+        <div class="segmented">
+          <button id="sigToPvBtn" class="seg active">信号 → 実値</button>
+          <button id="pvToSigBtn" class="seg">実値 → 信号</button>
+        </div>
+
+        <label for="signalType">信号種類</label>
+        <select id="signalType">
+          <option value="4-20mA">4–20mA</option>
+          <option value="1-5V">1–5V</option>
+        </select>
+
+        <div class="two-col">
+          <div>
+            <label for="rangeLow">レンジ下限</label>
+            <input id="rangeLow" type="number" inputmode="decimal" step="any" value="-20.0" />
+          </div>
+          <div>
+            <label for="rangeHigh">レンジ上限</label>
+            <input id="rangeHigh" type="number" inputmode="decimal" step="any" value="80.0" />
+          </div>
+        </div>
+
+        <label for="rangeUnit">単位</label>
+        <input id="rangeUnit" type="text" value="℃" placeholder="例：℃ / MPa / m³/h / %RH" />
+
+        <label id="rangeInputLabel" for="rangeInput">入力信号</label>
+        <div class="input-with-unit">
+          <input id="rangeInput" type="number" inputmode="decimal" step="any" value="12" />
+          <span id="rangeInputUnit">mA</span>
+        </div>
+
+        <label for="rangeDecimals">表示桁数</label>
+        <select id="rangeDecimals">
+          <option value="0">0桁</option>
+          <option value="1" selected>1桁</option>
+          <option value="2">2桁</option>
+          <option value="3">3桁</option>
+        </select>
+
+        <div class="result-card">
+          <span>変換結果</span>
+          <strong id="rangeResult">30.0 ℃</strong>
+          <em id="rangeWarning"></em>
+        </div>
+
+        <div class="action-row">
+          <button id="favoriteBtn" class="primary">★ お気に入り登録</button>
+          <button id="clearHistoryBtn" class="secondary">履歴削除</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>お気に入り</h3>
+        <div id="favoritesList" class="list empty">まだ登録されていません</div>
+      </div>
+
+      <div class="panel">
+        <h3>最近使ったレンジ</h3>
+        <div id="historyList" class="list empty">履歴はありません</div>
+      </div>
+    </section>
+
+    <section id="numView" class="view">
+      <div class="section-head">
+        <button class="back-btn" data-view="homeView">←</button>
+        <div><h2>進数変換</h2><p>BIN / DEC / HEX を相互変換</p></div>
+      </div>
+
+      <div class="panel">
+        <label for="numBase">入力形式</label>
+        <select id="numBase">
+          <option value="10">DEC（10進数）</option>
+          <option value="16">HEX（16進数）</option>
+          <option value="2">BIN（2進数）</option>
+        </select>
+
+        <label for="numInput">入力値</label>
+        <input id="numInput" type="text" value="255" autocomplete="off" spellcheck="false" />
+
+        <div class="conversion-list">
+          <div class="conv-row"><span>DEC</span><strong id="outDec">255</strong></div>
+          <div class="conv-row"><span>HEX</span><strong id="outHex">FF</strong></div>
+          <div class="conv-row"><span>BIN</span><strong id="outBin">11111111</strong></div>
+        </div>
+
+        <div class="result-card compact-result">
+          <span>16bit表現</span>
+          <strong id="out16">0000 0000 1111 1111</strong>
+          <em id="signedInfo">Unsigned: 255　Signed: 255</em>
+        </div>
+
+        <p class="note">DECでは負数入力にも対応。16bit Signed / Unsigned を同時表示。</p>
+      </div>
+    </section>
+
+    <section id="heatView" class="view">
+      <div class="section-head">
+        <button class="back-btn" data-view="homeView">←</button>
+        <div><h2>熱量演算</h2><p>水系統の熱量を算出</p></div>
+      </div>
+
+      <div class="panel">
+        <label for="heatFlow">流量</label>
+        <div class="input-with-unit">
+          <input id="heatFlow" type="number" inputmode="decimal" step="any" value="100" />
+          <select id="heatFlowUnit" class="inline-select">
+            <option value="m3h">m³/h</option>
+            <option value="Lmin">L/min</option>
+            <option value="Ls">L/s</option>
+          </select>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <label for="heatT1">温度1</label>
+            <div class="input-with-unit"><input id="heatT1" type="number" inputmode="decimal" step="any" value="7" /><span>℃</span></div>
+          </div>
+          <div>
+            <label for="heatT2">温度2</label>
+            <div class="input-with-unit"><input id="heatT2" type="number" inputmode="decimal" step="any" value="12" /><span>℃</span></div>
+          </div>
+        </div>
+
+        <label for="heatDeltaMode">温度差</label>
+        <select id="heatDeltaMode">
+          <option value="abs">絶対値 |T2−T1|</option>
+          <option value="signed">符号付き T2−T1</option>
+        </select>
+
+        <label for="heatOutput">出力単位</label>
+        <select id="heatOutput">
+          <option value="kW">kW</option>
+          <option value="MJh">MJ/h</option>
+          <option value="GJh">GJ/h</option>
+          <option value="kcalh">kcal/h</option>
+        </select>
+
+        <div class="result-card">
+          <span>熱量</span>
+          <strong id="heatResult">581.4 kW</strong>
+          <em id="heatSub">ΔT = 5.0 ℃</em>
+        </div>
+
+        <div class="conversion-list">
+          <div class="conv-row"><span>流量換算</span><strong id="heatFlowConverted">100.000 m³/h</strong></div>
+          <div class="conv-row"><span>計算式</span><strong id="heatFormula">1.1628 × 流量 × ΔT</strong></div>
+        </div>
+
+        <p class="note">水：密度 1000 kg/m³、比熱 4.186 kJ/(kg·K) として算出。</p>
+      </div>
+    </section>
+
+    <section id="unitView" class="view">
+      <div class="section-head">
+        <button class="back-btn" data-view="homeView">←</button>
+        <div><h2>単位変換</h2><p>現場で使う主要単位を即変換</p></div>
+      </div>
+
+      <div class="panel">
+        <label for="unitCategory">カテゴリ</label>
+        <select id="unitCategory">
+          <option value="pressure">圧力</option>
+          <option value="temperature">温度</option>
+          <option value="flow">流量</option>
+        </select>
+
+        <div class="two-col">
+          <div>
+            <label for="unitFrom">変換元</label>
+            <select id="unitFrom"></select>
+          </div>
+          <div>
+            <label for="unitTo">変換先</label>
+            <select id="unitTo"></select>
+          </div>
+        </div>
+
+        <label for="unitValue">値</label>
+        <input id="unitValue" type="number" inputmode="decimal" step="any" value="1" />
+
+        <div class="result-card">
+          <span>換算結果</span>
+          <strong id="unitResult">1000 kPa</strong>
+          <em id="unitFormula">1 MPa → kPa</em>
+        </div>
+
+        <div class="action-row">
+          <button id="swapUnitBtn" class="secondary full">⇄ 変換元と変換先を入れ替え</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
