@@ -43,3 +43,24 @@ button{cursor:pointer}.primary,.secondary{border:0;border-radius:12px;padding:12
 .conv-row{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px}
 .conv-row span{color:var(--muted);font-size:13px}.conv-row strong{font-size:17px;word-break:break-all;text-align:right}
 @media(max-width:480px){.grid{grid-template-columns:1fr 1fr}.action-row{grid-template-columns:1fr}.result-card strong{font-size:27px}.two-col{grid-template-columns:1fr 1fr}}
+
+/* ===== Ver.2 additions ===== */
+.head-copy{flex:1;min-width:0}
+.help-btn{border:0;border-radius:999px;background:#fff;padding:8px 10px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.info-btn{display:inline;border:0;background:transparent;padding:0 2px;color:#6b7280;font-size:14px;vertical-align:baseline}
+.dark-info{color:rgba(255,255,255,.75)}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.modal{position:fixed;inset:0;z-index:100;display:none}
+.modal.open{display:block}
+.modal-backdrop{position:absolute;inset:0;background:rgba(17,24,39,.46)}
+.modal-sheet{position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.14)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-18px;background:#fff;padding:4px 0 10px;z-index:1}
+.modal-head h3{margin:0;font-size:20px}
+.modal-close{width:38px;height:38px;border:0;border-radius:50%;background:#f3f4f6;font-size:24px;line-height:1}
+.help-body{font-size:14px;line-height:1.75;color:#374151}
+.help-body h4{font-size:16px;color:#111827;margin:16px 0 6px}
+.help-body p{margin:7px 0}
+.help-body ul{padding-left:20px;margin:8px 0}
+.help-body .example{background:#f3f4f6;border-radius:12px;padding:12px;margin:10px 0;font-weight:600;color:#111827}
+.help-body code{background:#f3f4f6;border-radius:6px;padding:2px 5px}
+@media(max-width:480px){.three-col{grid-template-columns:1fr 1fr 1fr}.section-head{align-items:flex-start}.help-btn{margin-top:4px}.menu-card{min-height:116px}}

@@ -16,236 +16,133 @@
         <h1>C-TOOL</h1>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
-      <div class="version">Ver.1</div>
+      <div class="version">Ver.2</div>
     </div>
   </header>
 
   <main class="container">
     <section id="homeView" class="view active">
       <div class="grid">
-        <button class="menu-card" data-view="rangeView">
-          <span class="icon">📐</span>
-          <span>レンジ変換</span>
-          <small>4–20mA / 1–5V</small>
-        </button>
-        <button class="menu-card" data-view="numView">
-          <span class="icon">🔢</span>
-          <span>進数変換</span>
-          <small>BIN / DEC / HEX</small>
-        </button>
-        <button class="menu-card" data-view="heatView">
-          <span class="icon">🔥</span>
-          <span>熱量演算</span>
-          <small>流量 × 温度差</small>
-        </button>
-        <button class="menu-card" data-view="unitView">
-          <span class="icon">🔁</span>
-          <span>単位変換</span>
-          <small>圧力 / 温度 / 流量</small>
-        </button>
+        <button class="menu-card" data-view="rangeView"><span class="icon">📐</span><span>レンジ変換</span><small>4–20mA / 1–5V</small></button>
+        <button class="menu-card" data-view="numView"><span class="icon">🔢</span><span>進数変換</span><small>BIN / DEC / HEX</small></button>
+        <button class="menu-card" data-view="heatView"><span class="icon">🔥</span><span>熱量演算</span><small>流量 × 温度差</small></button>
+        <button class="menu-card" data-view="unitView"><span class="icon">🔁</span><span>単位変換</span><small>圧力 / 温度 / 流量</small></button>
+        <button class="menu-card" data-view="pidView"><span class="icon">🎚️</span><span>PID</span><small>P / I / D 演算確認</small></button>
+        <button class="menu-card" data-view="pt100View"><span class="icon">🌡️</span><span>Pt100</span><small>温度 ⇄ 抵抗</small></button>
+        <button class="menu-card" data-view="freqView"><span class="icon">〰️</span><span>周波数</span><small>Hz / RPM / 周期</small></button>
+        <button class="menu-card" data-view="timeView"><span class="icon">⏱️</span><span>時間変換</span><small>ms / s / min / h / PLC</small></button>
       </div>
     </section>
 
     <section id="rangeView" class="view">
-      <div class="section-head">
-        <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>レンジ変換</h2><p>任意レンジ・負数・小数対応</p></div>
-      </div>
-
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>レンジ変換</h2><p>任意レンジ・負数・小数対応</p></div><button class="help-btn" data-help="range">？ 解説</button></div>
       <div class="panel">
-        <label>変換方向</label>
-        <div class="segmented">
-          <button id="sigToPvBtn" class="seg active">信号 → 実値</button>
-          <button id="pvToSigBtn" class="seg">実値 → 信号</button>
-        </div>
-
-        <label for="signalType">信号種類</label>
-        <select id="signalType">
-          <option value="4-20mA">4–20mA</option>
-          <option value="1-5V">1–5V</option>
-        </select>
-
-        <div class="two-col">
-          <div>
-            <label for="rangeLow">レンジ下限</label>
-            <input id="rangeLow" type="number" inputmode="decimal" step="any" value="-20.0" />
-          </div>
-          <div>
-            <label for="rangeHigh">レンジ上限</label>
-            <input id="rangeHigh" type="number" inputmode="decimal" step="any" value="80.0" />
-          </div>
-        </div>
-
-        <label for="rangeUnit">単位</label>
-        <input id="rangeUnit" type="text" value="℃" placeholder="例：℃ / MPa / m³/h / %RH" />
-
-        <label id="rangeInputLabel" for="rangeInput">入力信号</label>
-        <div class="input-with-unit">
-          <input id="rangeInput" type="number" inputmode="decimal" step="any" value="12" />
-          <span id="rangeInputUnit">mA</span>
-        </div>
-
-        <label for="rangeDecimals">表示桁数</label>
-        <select id="rangeDecimals">
-          <option value="0">0桁</option>
-          <option value="1" selected>1桁</option>
-          <option value="2">2桁</option>
-          <option value="3">3桁</option>
-        </select>
-
-        <div class="result-card">
-          <span>変換結果</span>
-          <strong id="rangeResult">30.0 ℃</strong>
-          <em id="rangeWarning"></em>
-        </div>
-
-        <div class="action-row">
-          <button id="favoriteBtn" class="primary">★ お気に入り登録</button>
-          <button id="clearHistoryBtn" class="secondary">履歴削除</button>
-        </div>
+        <label>変換方向 <button class="info-btn" data-info="range-direction">ⓘ</button></label>
+        <div class="segmented"><button id="sigToPvBtn" class="seg active">信号 → 実値</button><button id="pvToSigBtn" class="seg">実値 → 信号</button></div>
+        <label for="signalType">信号種類 <button class="info-btn" data-info="signal-type">ⓘ</button></label>
+        <select id="signalType"><option value="4-20mA">4–20mA</option><option value="1-5V">1–5V</option></select>
+        <div class="two-col"><div><label for="rangeLow">レンジ下限 <button class="info-btn" data-info="range-limits">ⓘ</button></label><input id="rangeLow" type="number" inputmode="decimal" step="any" value="-20.0" /></div><div><label for="rangeHigh">レンジ上限</label><input id="rangeHigh" type="number" inputmode="decimal" step="any" value="80.0" /></div></div>
+        <label for="rangeUnit">単位</label><input id="rangeUnit" type="text" value="℃" placeholder="例：℃ / MPa / m³/h / %RH" />
+        <label for="rangeInput"><span id="rangeInputLabel">入力信号</span> <button class="info-btn" data-info="range-input">ⓘ</button></label>
+        <div class="input-with-unit"><input id="rangeInput" type="number" inputmode="decimal" step="any" value="12" /><span id="rangeInputUnit">mA</span></div>
+        <label for="rangeDecimals">表示桁数</label><select id="rangeDecimals"><option value="0">0桁</option><option value="1" selected>1桁</option><option value="2">2桁</option><option value="3">3桁</option></select>
+        <div class="result-card"><span>変換結果</span><strong id="rangeResult">30.0 ℃</strong><em id="rangeWarning"></em></div>
+        <div class="action-row"><button id="favoriteBtn" class="primary">★ お気に入り登録</button><button id="clearHistoryBtn" class="secondary">履歴削除</button></div>
       </div>
-
-      <div class="panel">
-        <h3>お気に入り</h3>
-        <div id="favoritesList" class="list empty">まだ登録されていません</div>
-      </div>
-
-      <div class="panel">
-        <h3>最近使ったレンジ</h3>
-        <div id="historyList" class="list empty">履歴はありません</div>
-      </div>
+      <div class="panel"><h3>お気に入り</h3><div id="favoritesList" class="list empty">まだ登録されていません</div></div>
+      <div class="panel"><h3>最近使ったレンジ</h3><div id="historyList" class="list empty">履歴はありません</div></div>
     </section>
 
     <section id="numView" class="view">
-      <div class="section-head">
-        <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>進数変換</h2><p>BIN / DEC / HEX を相互変換</p></div>
-      </div>
-
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>進数変換</h2><p>BIN / DEC / HEX を相互変換</p></div><button class="help-btn" data-help="num">？ 解説</button></div>
       <div class="panel">
-        <label for="numBase">入力形式</label>
-        <select id="numBase">
-          <option value="10">DEC（10進数）</option>
-          <option value="16">HEX（16進数）</option>
-          <option value="2">BIN（2進数）</option>
-        </select>
-
-        <label for="numInput">入力値</label>
-        <input id="numInput" type="text" value="255" autocomplete="off" spellcheck="false" />
-
-        <div class="conversion-list">
-          <div class="conv-row"><span>DEC</span><strong id="outDec">255</strong></div>
-          <div class="conv-row"><span>HEX</span><strong id="outHex">FF</strong></div>
-          <div class="conv-row"><span>BIN</span><strong id="outBin">11111111</strong></div>
-        </div>
-
-        <div class="result-card compact-result">
-          <span>16bit表現</span>
-          <strong id="out16">0000 0000 1111 1111</strong>
-          <em id="signedInfo">Unsigned: 255　Signed: 255</em>
-        </div>
-
+        <label for="numBase">入力形式 <button class="info-btn" data-info="num-base">ⓘ</button></label><select id="numBase"><option value="10">DEC（10進数）</option><option value="16">HEX（16進数）</option><option value="2">BIN（2進数）</option></select>
+        <label for="numInput">入力値</label><input id="numInput" type="text" value="255" autocomplete="off" spellcheck="false" />
+        <div class="conversion-list"><div class="conv-row"><span>DEC</span><strong id="outDec">255</strong></div><div class="conv-row"><span>HEX</span><strong id="outHex">FF</strong></div><div class="conv-row"><span>BIN</span><strong id="outBin">11111111</strong></div></div>
+        <div class="result-card compact-result"><span>16bit表現 <button class="info-btn dark-info" data-info="signed16">ⓘ</button></span><strong id="out16">0000 0000 1111 1111</strong><em id="signedInfo">Unsigned: 255　Signed: 255</em></div>
         <p class="note">DECでは負数入力にも対応。16bit Signed / Unsigned を同時表示。</p>
       </div>
     </section>
 
     <section id="heatView" class="view">
-      <div class="section-head">
-        <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>熱量演算</h2><p>水系統の熱量を算出</p></div>
-      </div>
-
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>熱量演算</h2><p>水系統の熱量を算出</p></div><button class="help-btn" data-help="heat">？ 解説</button></div>
       <div class="panel">
-        <label for="heatFlow">流量</label>
-        <div class="input-with-unit">
-          <input id="heatFlow" type="number" inputmode="decimal" step="any" value="100" />
-          <select id="heatFlowUnit" class="inline-select">
-            <option value="m3h">m³/h</option>
-            <option value="Lmin">L/min</option>
-            <option value="Ls">L/s</option>
-          </select>
-        </div>
-
-        <div class="two-col">
-          <div>
-            <label for="heatT1">温度1</label>
-            <div class="input-with-unit"><input id="heatT1" type="number" inputmode="decimal" step="any" value="7" /><span>℃</span></div>
-          </div>
-          <div>
-            <label for="heatT2">温度2</label>
-            <div class="input-with-unit"><input id="heatT2" type="number" inputmode="decimal" step="any" value="12" /><span>℃</span></div>
-          </div>
-        </div>
-
-        <label for="heatDeltaMode">温度差</label>
-        <select id="heatDeltaMode">
-          <option value="abs">絶対値 |T2−T1|</option>
-          <option value="signed">符号付き T2−T1</option>
-        </select>
-
-        <label for="heatOutput">出力単位</label>
-        <select id="heatOutput">
-          <option value="kW">kW</option>
-          <option value="MJh">MJ/h</option>
-          <option value="GJh">GJ/h</option>
-          <option value="kcalh">kcal/h</option>
-        </select>
-
-        <div class="result-card">
-          <span>熱量</span>
-          <strong id="heatResult">581.4 kW</strong>
-          <em id="heatSub">ΔT = 5.0 ℃</em>
-        </div>
-
-        <div class="conversion-list">
-          <div class="conv-row"><span>流量換算</span><strong id="heatFlowConverted">100.000 m³/h</strong></div>
-          <div class="conv-row"><span>計算式</span><strong id="heatFormula">1.1628 × 流量 × ΔT</strong></div>
-        </div>
-
+        <label for="heatFlow">流量 <button class="info-btn" data-info="heat-flow">ⓘ</button></label><div class="input-with-unit"><input id="heatFlow" type="number" inputmode="decimal" step="any" value="100" /><select id="heatFlowUnit" class="inline-select"><option value="m3h">m³/h</option><option value="Lmin">L/min</option><option value="Ls">L/s</option></select></div>
+        <div class="two-col"><div><label for="heatT1">温度1</label><div class="input-with-unit"><input id="heatT1" type="number" inputmode="decimal" step="any" value="7" /><span>℃</span></div></div><div><label for="heatT2">温度2</label><div class="input-with-unit"><input id="heatT2" type="number" inputmode="decimal" step="any" value="12" /><span>℃</span></div></div></div>
+        <label for="heatDeltaMode">温度差 <button class="info-btn" data-info="delta-t">ⓘ</button></label><select id="heatDeltaMode"><option value="abs">絶対値 |T2−T1|</option><option value="signed">符号付き T2−T1</option></select>
+        <label for="heatOutput">出力単位</label><select id="heatOutput"><option value="kW">kW</option><option value="MJh">MJ/h</option><option value="GJh">GJ/h</option><option value="kcalh">kcal/h</option></select>
+        <div class="result-card"><span>熱量</span><strong id="heatResult">581.4 kW</strong><em id="heatSub">ΔT = 5.0 ℃</em></div>
+        <div class="conversion-list"><div class="conv-row"><span>流量換算</span><strong id="heatFlowConverted">100.000 m³/h</strong></div><div class="conv-row"><span>計算式</span><strong id="heatFormula">1.1628 × 流量 × ΔT</strong></div></div>
         <p class="note">水：密度 1000 kg/m³、比熱 4.186 kJ/(kg·K) として算出。</p>
       </div>
     </section>
 
     <section id="unitView" class="view">
-      <div class="section-head">
-        <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>単位変換</h2><p>現場で使う主要単位を即変換</p></div>
-      </div>
-
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>単位変換</h2><p>現場で使う主要単位を即変換</p></div><button class="help-btn" data-help="unit">？ 解説</button></div>
       <div class="panel">
-        <label for="unitCategory">カテゴリ</label>
-        <select id="unitCategory">
-          <option value="pressure">圧力</option>
-          <option value="temperature">温度</option>
-          <option value="flow">流量</option>
-        </select>
-
-        <div class="two-col">
-          <div>
-            <label for="unitFrom">変換元</label>
-            <select id="unitFrom"></select>
-          </div>
-          <div>
-            <label for="unitTo">変換先</label>
-            <select id="unitTo"></select>
-          </div>
-        </div>
-
-        <label for="unitValue">値</label>
-        <input id="unitValue" type="number" inputmode="decimal" step="any" value="1" />
-
-        <div class="result-card">
-          <span>換算結果</span>
-          <strong id="unitResult">1000 kPa</strong>
-          <em id="unitFormula">1 MPa → kPa</em>
-        </div>
-
-        <div class="action-row">
-          <button id="swapUnitBtn" class="secondary full">⇄ 変換元と変換先を入れ替え</button>
-        </div>
+        <label for="unitCategory">カテゴリ</label><select id="unitCategory"><option value="pressure">圧力</option><option value="temperature">温度</option><option value="flow">流量</option></select>
+        <div class="two-col"><div><label for="unitFrom">変換元</label><select id="unitFrom"></select></div><div><label for="unitTo">変換先</label><select id="unitTo"></select></div></div>
+        <label for="unitValue">値</label><input id="unitValue" type="number" inputmode="decimal" step="any" value="1" />
+        <div class="result-card"><span>換算結果</span><strong id="unitResult">1000 kPa</strong><em id="unitFormula">1 MPa → kPa</em></div>
+        <div class="action-row"><button id="swapUnitBtn" class="secondary full">⇄ 変換元と変換先を入れ替え</button></div>
       </div>
     </section>
+
+    <section id="pidView" class="view">
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>PID</h2><p>PID各項の寄与を簡易計算</p></div><button class="help-btn" data-help="pid">？ 解説</button></div>
+      <div class="panel">
+        <div class="two-col"><div><label for="pidSp">SP（設定値） <button class="info-btn" data-info="pid-sp-pv">ⓘ</button></label><input id="pidSp" type="number" inputmode="decimal" step="any" value="50" /></div><div><label for="pidPv">PV（現在値）</label><input id="pidPv" type="number" inputmode="decimal" step="any" value="45" /></div></div>
+        <div class="three-col"><div><label for="pidKp">Kp <button class="info-btn" data-info="pid-kp">ⓘ</button></label><input id="pidKp" type="number" inputmode="decimal" step="any" value="2" /></div><div><label for="pidTi">Ti [s] <button class="info-btn" data-info="pid-ti">ⓘ</button></label><input id="pidTi" type="number" inputmode="decimal" step="any" value="60" /></div><div><label for="pidTd">Td [s] <button class="info-btn" data-info="pid-td">ⓘ</button></label><input id="pidTd" type="number" inputmode="decimal" step="any" value="0" /></div></div>
+        <div class="two-col"><div><label for="pidDt">演算周期 Δt [s]</label><input id="pidDt" type="number" inputmode="decimal" step="any" value="1" /></div><div><label for="pidPrevError">前回偏差</label><input id="pidPrevError" type="number" inputmode="decimal" step="any" value="5" /></div></div>
+        <label for="pidIntegral">積分蓄積値 <button class="info-btn" data-info="pid-integral">ⓘ</button></label><input id="pidIntegral" type="number" inputmode="decimal" step="any" value="0" />
+        <div class="conversion-list"><div class="conv-row"><span>偏差 e = SP−PV</span><strong id="pidError">5.000</strong></div><div class="conv-row"><span>P項</span><strong id="pidP">10.000</strong></div><div class="conv-row"><span>I項</span><strong id="pidI">0.167</strong></div><div class="conv-row"><span>D項</span><strong id="pidD">0.000</strong></div></div>
+        <div class="result-card"><span>PID出力（簡易位置形）</span><strong id="pidOutput">10.167</strong><em id="pidClamped">0〜100%制限後: 10.167%</em></div>
+        <p class="note">教育・演算確認用の簡易位置形PIDです。実機PLC/調節計のアルゴリズム、比例帯、微分先行、アンチワインドアップ等とは一致しない場合があります。</p>
+      </div>
+    </section>
+
+    <section id="pt100View" class="view">
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>Pt100</h2><p>IEC 60751 温度 ⇄ 抵抗</p></div><button class="help-btn" data-help="pt100">？ 解説</button></div>
+      <div class="panel">
+        <label>変換方向</label><div class="segmented"><button id="ptTtoRBtn" class="seg active">温度 → 抵抗</button><button id="ptRtoTBtn" class="seg">抵抗 → 温度</button></div>
+        <label id="ptInputLabel" for="ptInput">温度 <button class="info-btn" data-info="pt100-basics">ⓘ</button></label><div class="input-with-unit"><input id="ptInput" type="number" inputmode="decimal" step="any" value="0" /><span id="ptInputUnit">℃</span></div>
+        <div class="result-card"><span id="ptResultLabel">抵抗値</span><strong id="ptResult">100.000 Ω</strong><em id="ptWarning"></em></div>
+        <div class="conversion-list"><div class="conv-row"><span>規格</span><strong>Pt100 / α=0.00385</strong></div><div class="conv-row"><span>計算範囲</span><strong>−200〜850 ℃</strong></div></div>
+        <p class="note">Callendar–Van Dusen式を使用。配線抵抗・自己発熱・センサ許容差は含みません。</p>
+      </div>
+    </section>
+
+    <section id="freqView" class="view">
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>周波数</h2><p>Hz / RPM / 周期をまとめて換算</p></div><button class="help-btn" data-help="freq">？ 解説</button></div>
+      <div class="panel">
+        <label for="freqMode">入力形式</label><select id="freqMode"><option value="hz">周波数 Hz</option><option value="rpm">回転数 RPM</option><option value="periodMs">周期 ms</option></select>
+        <label for="freqInput">入力値</label><input id="freqInput" type="number" inputmode="decimal" step="any" value="50" />
+        <label for="freqPpr">1回転あたりパルス数（PPR） <button class="info-btn" data-info="freq-ppr">ⓘ</button></label><input id="freqPpr" type="number" inputmode="numeric" step="1" min="1" value="1" />
+        <div class="conversion-list"><div class="conv-row"><span>周波数</span><strong id="freqHz">50.000 Hz</strong></div><div class="conv-row"><span>回転数</span><strong id="freqRpm">3000.000 RPM</strong></div><div class="conv-row"><span>周期</span><strong id="freqPeriod">20.000 ms</strong></div></div>
+        <p class="note">RPM換算は「1回転あたり何パルス出るか（PPR）」を考慮します。PPR=1なら 1 Hz = 60 RPM。</p>
+      </div>
+      <div class="panel"><h3>モータ同期速度</h3><div class="two-col"><div><label for="motorHz">周波数 [Hz]</label><input id="motorHz" type="number" inputmode="decimal" step="any" value="50" /></div><div><label for="motorPoles">極数 <button class="info-btn" data-info="motor-poles">ⓘ</button></label><select id="motorPoles"><option>2</option><option selected>4</option><option>6</option><option>8</option><option>10</option><option>12</option></select></div></div><div class="result-card compact-result"><span>同期速度</span><strong id="motorRpm">1500 RPM</strong><em>Ns = 120 × f ÷ 極数</em></div><p class="note">誘導電動機の実回転数は、すべりのため同期速度より少し低くなります。</p></div>
+    </section>
+
+    <section id="timeView" class="view">
+      <div class="section-head"><button class="back-btn" data-view="homeView">←</button><div class="head-copy"><h2>時間変換</h2><p>時間単位とPLCタイマ設定値を換算</p></div><button class="help-btn" data-help="time">？ 解説</button></div>
+      <div class="panel">
+        <label for="timeValue">値</label><input id="timeValue" type="number" inputmode="decimal" step="any" value="1" />
+        <div class="two-col"><div><label for="timeFrom">変換元</label><select id="timeFrom"><option value="ms">ms</option><option value="s" selected>s</option><option value="min">min</option><option value="h">h</option><option value="day">day</option></select></div><div><label for="timeTo">変換先</label><select id="timeTo"><option value="ms" selected>ms</option><option value="s">s</option><option value="min">min</option><option value="h">h</option><option value="day">day</option></select></div></div>
+        <div class="result-card"><span>換算結果</span><strong id="timeResult">1000 ms</strong><em id="timeFormula">1 s → ms</em></div>
+        <div class="action-row"><button id="swapTimeBtn" class="secondary full">⇄ 変換元と変換先を入れ替え</button></div>
+      </div>
+      <div class="panel"><h3>PLCタイマ設定値</h3><label for="plcTimeSec">目標時間 [s] <button class="info-btn" data-info="plc-timer">ⓘ</button></label><input id="plcTimeSec" type="number" inputmode="decimal" step="any" value="5" /><label for="plcTimeBase">タイマ時限</label><select id="plcTimeBase"><option value="0.001">1 ms</option><option value="0.01">10 ms</option><option value="0.1" selected>100 ms</option><option value="1">1 s</option></select><div class="result-card compact-result"><span>設定値</span><strong id="plcTimerPreset">50</strong><em id="plcTimerActual">実時間: 5.000 s</em></div><p class="note">PLC機種・タイマ命令により時限や設定範囲は異なります。実機仕様を優先してください。</p></div>
+    </section>
   </main>
+
+  <div id="helpModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="modal-head"><h3 id="helpTitle">解説</h3><button id="helpClose" class="modal-close">×</button></div>
+      <div id="helpBody" class="help-body"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
