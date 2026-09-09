@@ -1,5 +1,5 @@
 {
-  "version": "2.2",
-  "build": "p-defaults",
+  "version": "1.0",
+  "build": "official-release-p-bias",
   "released": "2026-09-09"
 }

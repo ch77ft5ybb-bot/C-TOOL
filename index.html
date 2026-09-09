@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v2.2.css" />
+  <link rel="stylesheet" href="styles-v1.0.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v2.2</span>
+          <span class="version">v1.0</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -231,7 +231,11 @@
         <p class="mini-note"><strong>逆動作（加熱）：</strong>PVがSPより低いほど出力が大きくなります。<br>
         <strong>正動作（冷却）：</strong>PVがSPより高いほど出力が大きくなります。</p>
 
-        <p class="mini-note"><strong>一般的なP動作：</strong>SP＝PVを50%出力の中心とし、比例帯（PB）の幅で出力が0〜100%変化します。PB[%]は入力フルスパンに対する割合です。逆動作（加熱）はPV低下で出力UP、正動作（冷却）はPV上昇で出力UPします。</p>
+        <p class="mini-note"><strong>P演算：</strong>MV[%]＝バイアス[%]＋P項。P項＝動作方向×Kp×偏差[%]、Kp＝100÷PB。バイアスは基準出力として任意設定できます（初期値0%）。最終出力は0〜100%に制限します。</p>
+
+        <label for="pidBias">バイアス（基準出力）[%]</label>
+        <input id="pidBias" type="text" inputmode="text" step="any" value="0" />
+        <p class="mini-note">純粋なP演算は0%。調節計などで基準操作量を持たせる場合は、その値を入力します。</p>
 
         <label>出力レンジ</label>
         <div class="two-col">
@@ -460,6 +464,6 @@
 
   </main>
 
-  <script src="app-v2.2.js"></script>
+  <script src="app-v1.0.js"></script>
 </body>
 </html>
