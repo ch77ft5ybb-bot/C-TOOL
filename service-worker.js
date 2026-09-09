@@ -1,54 +1,68 @@
-const CACHE="ctool-v1.1-r3";
+const CACHE="ctool-v1.2";
 const ASSETS=["./","index.html","styles.css","app.js","manifest.json","icon.svg"];
-
-async function freshPrecache(){
-  const cache=await caches.open(CACHE);
-  await Promise.all(ASSETS.map(async asset=>{
-    const response=await fetch(asset,{cache:"reload"});
-    if(!response.ok) throw new Error(`Precache failed: ${asset}`);
-    await cache.put(asset,response);
-  }));
-}
 
 self.addEventListener("install",event=>{
   self.skipWaiting();
-  event.waitUntil(freshPrecache());
+  event.waitUntil(
+    caches.open(CACHE).then(cache =>
+      Promise.all(
+        ASSETS.map(asset =>
+          fetch(asset,{cache:"reload"}).then(response=>{
+            if(!response.ok) throw new Error(`Failed: ${asset}`);
+            return cache.put(asset,response);
+          })
+        )
+      )
+    )
+  );
 });
 
 self.addEventListener("activate",event=>{
   event.waitUntil(
     caches.keys()
-      .then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key))))
+      .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
       .then(()=>self.clients.claim())
   );
 });
 
-self.addEventListener("message",event=>{
-  if(event.data && event.data.type==="SKIP_WAITING") self.skipWaiting();
-});
-
 self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET") return;
-
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin) return;
 
+  // version.json は絶対にキャッシュしない
+  if(url.pathname.endsWith("/version.json")){
+    event.respondWith(fetch(event.request,{cache:"no-store"}));
+    return;
+  }
+
+  // ナビゲーションはネットワーク優先
+  if(event.request.mode==="navigate"){
+    event.respondWith((async()=>{
+      try{
+        const fresh=await fetch(event.request,{cache:"no-store"});
+        if(fresh.ok){
+          const cache=await caches.open(CACHE);
+          await cache.put("index.html",fresh.clone());
+        }
+        return fresh;
+      }catch{
+        return (await caches.match("index.html")) || (await caches.match("./"));
+      }
+    })());
+    return;
+  }
+
   event.respondWith((async()=>{
     try{
-      if(url.searchParams.has("version_check")){
-        return await fetch(event.request,{cache:"no-store"});
-      }
-
-      const response=await fetch(event.request,{cache:"no-store"});
-      if(response && response.ok){
+      const fresh=await fetch(event.request,{cache:"no-store"});
+      if(fresh.ok){
         const cache=await caches.open(CACHE);
-        await cache.put(event.request,response.clone());
+        await cache.put(event.request,fresh.clone());
       }
-      return response;
-    }catch(err){
-      return (await caches.match(event.request)) ||
-             (await caches.match(url.pathname.endsWith("/") ? "./" : url.pathname.split("/").pop())) ||
-             (await caches.match("index.html"));
+      return fresh;
+    }catch{
+      return (await caches.match(event.request)) || Response.error();
     }
   })());
 });

@@ -1,8 +1,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "1.1";
-const APP_BUILD = "release-r3";
+const APP_VERSION = "1.2";
+const APP_BUILD = "ios-pwa-update-fix-1";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
@@ -14,61 +14,59 @@ function setUpdateUi(message, state="idle"){
   btn.classList.toggle("is-updating", state==="updating");
   btn.disabled=state==="updating";
 
-  // 「↻ 更新」のDOMは壊さず、状態だけ変更する。
   const icon=btn.querySelector(".update-icon");
   if(icon) icon.textContent="↻";
 
-  const label =
-    state==="updating" ? "更新確認中" :
+  const label=btn.querySelector(".update-label");
+  if(label) label.textContent="更新";
+
+  const aria =
+    state==="updating" ? "更新中" :
     state==="current" ? "最新版です" :
     "最新版を確認";
-  btn.setAttribute("aria-label", label);
-  btn.setAttribute("title", label);
+  btn.setAttribute("aria-label",aria);
+  btn.title=aria;
 }
 
-async function getRemoteAppInfo(){
-  const url=`app.js?version_check=${Date.now()}`;
-  const response=await fetch(url,{cache:"no-store"});
-  if(!response.ok) throw new Error(`HTTP ${response.status}`);
-
-  const text=await response.text();
-  const version=text.match(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']/)?.[1] || null;
-  const build=text.match(/const\s+APP_BUILD\s*=\s*["']([^"']+)["']/)?.[1] || null;
-  return {version,build};
-}
-
-async function forceServiceWorkerUpdate(){
-  if(!("serviceWorker" in navigator)) return null;
-
-  let reg=await navigator.serviceWorker.getRegistration();
-  if(!reg){
-    reg=await navigator.serviceWorker.register("service-worker.js",{updateViaCache:"none"});
-  }
-
-  await reg.update();
-
-  if(reg.waiting){
-    reg.waiting.postMessage({type:"SKIP_WAITING"});
-  }
-  return reg;
-}
-
-function waitForControllerChange(timeoutMs=3500){
-  return new Promise(resolve=>{
-    if(!("serviceWorker" in navigator)) return resolve(false);
-
-    let done=false;
-    const finish=value=>{
-      if(done) return;
-      done=true;
-      clearTimeout(timer);
-      navigator.serviceWorker.removeEventListener("controllerchange",onChange);
-      resolve(value);
-    };
-    const onChange=()=>finish(true);
-    const timer=setTimeout(()=>finish(false),timeoutMs);
-    navigator.serviceWorker.addEventListener("controllerchange",onChange,{once:true});
+async function fetchRemoteVersion(){
+  const res=await fetch(`version.json?t=${Date.now()}`,{
+    cache:"no-store",
+    headers:{"Cache-Control":"no-cache"}
   });
+  if(!res.ok) throw new Error(`version.json HTTP ${res.status}`);
+  return await res.json();
+}
+
+async function unregisterAllServiceWorkers(){
+  if(!("serviceWorker" in navigator)) return;
+  const regs=await navigator.serviceWorker.getRegistrations();
+  await Promise.all(regs.map(reg=>reg.unregister()));
+}
+
+// USER DATA SAFETY:
+ // App updates may delete only Cache Storage / Service Worker registrations.
+ // Never clear localStorage here: range favorites and future user settings live there.
+async function clearAllAppCaches(){
+  if(!("caches" in window)) return;
+  const keys=await caches.keys();
+  await Promise.all(keys.map(key=>caches.delete(key)));
+}
+
+async function hardReloadFromNetwork(remoteVersion){
+  // iOSホーム画面PWA対策:
+  // 古いService WorkerとCache Storageを一旦捨てて、
+  // キャッシュバスター付きURLでネットワークからindex.htmlを取り直す。
+  sessionStorage.setItem("ctoolUpdateDone",remoteVersion || "latest");
+
+  await unregisterAllServiceWorkers();
+  await clearAllAppCaches();
+
+  const url=new URL(window.location.href);
+  url.searchParams.set("update",remoteVersion || "latest");
+  url.searchParams.set("t",Date.now().toString());
+
+  // replace にして戻る履歴へ古いURLを残さない
+  window.location.replace(url.toString());
 }
 
 async function checkForAppUpdate(){
@@ -78,41 +76,32 @@ async function checkForAppUpdate(){
   }
 
   if(!navigator.onLine){
-    setUpdateUi(`現在 v${APP_VERSION} ・ オフラインのため確認できません`);
+    setUpdateUi("オフラインのため更新確認できません");
     return;
   }
 
   setUpdateUi("最新版を確認しています…","updating");
 
   try{
-    const remote=await getRemoteAppInfo();
-    if(!remote.version){
-      setUpdateUi("更新情報を取得できませんでした");
-      return;
+    const remote=await fetchRemoteVersion();
+    const remoteVersion=String(remote.version || "");
+
+    if(!remoteVersion){
+      throw new Error("version missing");
     }
 
-    const sameVersion=remote.version===APP_VERSION;
-    const sameBuild=!remote.build || remote.build===APP_BUILD;
-
-    if(sameVersion && sameBuild){
-      await forceServiceWorkerUpdate();
+    if(remoteVersion===APP_VERSION && remote.build===APP_BUILD){
       setUpdateUi(`v${APP_VERSION} が最新版です`,"current");
       setTimeout(()=>setUpdateUi(""),2200);
       return;
     }
 
-    setUpdateUi(`v${remote.version} を更新しています…`,"updating");
-    updateReloadPending=true;
-
-    const controllerWait=waitForControllerChange();
-    await forceServiceWorkerUpdate();
-    await controllerWait;
-
-    window.location.reload();
+    setUpdateUi(`v${remoteVersion} へ更新しています…`,"updating");
+    await hardReloadFromNetwork(remoteVersion);
 
   }catch(err){
-    console.error("C-TOOL update check failed",err);
-    setUpdateUi("更新確認に失敗しました。もう一度押してください");
+    console.error("C-TOOL update failed",err);
+    setUpdateUi("更新に失敗しました。通信を確認して再度押してください");
   }
 }
 
@@ -724,11 +713,7 @@ calcFreq();
 if($("checkUpdateBtn")) $("checkUpdateBtn").addEventListener("click",checkForAppUpdate);
 
 if("serviceWorker" in navigator && location.protocol!=="file:"){
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{
-    if(updateReloadPending) return;
-    updateReloadPending=true;
-    window.location.reload();
-  });
+  
 
   window.addEventListener("load",async()=>{
     try{
@@ -747,3 +732,12 @@ window.addEventListener("online",()=>setUpdateUi(""));
 window.addEventListener("offline",()=>setUpdateUi("オフライン"));
 
 if(navigator.onLine) syncOnlineClock();
+
+window.addEventListener("DOMContentLoaded",()=>{
+  const done=sessionStorage.getItem("ctoolUpdateDone");
+  if(done){
+    sessionStorage.removeItem("ctoolUpdateDone");
+    setTimeout(()=>setUpdateUi(`v${APP_VERSION} に更新しました`,"current"),250);
+    setTimeout(()=>setUpdateUi(""),2600);
+  }
+});
