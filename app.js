@@ -1,8 +1,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "1.3";
-const APP_BUILD = "update-test-v1.3";
+const APP_VERSION = "1.4";
+const APP_BUILD = "ios-clock-freeze-fix";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
@@ -496,10 +496,18 @@ function median(values){
 async function clockSample(){
   const t0=Date.now();
   const p0=performance.now();
-  const res=await fetch(`./?clock_sync=${Date.now()}_${Math.random()}`,{
-    method:"HEAD",
-    cache:"no-store"
-  });
+  const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),2500);
+    let res;
+    try{
+      res=await fetch(`./?clock_sync=${Date.now()}_${Math.random()}`,{
+        method:"HEAD",
+        cache:"no-store",
+        signal:controller.signal
+      });
+    }finally{
+      clearTimeout(timeoutId);
+    }
   const p1=performance.now();
   const t1=Date.now();
 
@@ -740,4 +748,8 @@ window.addEventListener("DOMContentLoaded",()=>{
     setTimeout(()=>setUpdateUi(`v${APP_VERSION} に更新しました`,"current"),250);
     setTimeout(()=>setUpdateUi(""),2600);
   }
+});
+
+window.addEventListener("unhandledrejection",(event)=>{
+  console.error("C-TOOL async error:",event.reason);
 });
