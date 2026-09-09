@@ -1,5 +1,5 @@
 {
-  "version": "2.0",
-  "build": "negative-input-pb-default",
+  "version": "2.2",
+  "build": "p-defaults",
   "released": "2026-09-09"
 }

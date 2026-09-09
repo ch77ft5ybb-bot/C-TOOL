@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v2.0.css" />
+  <link rel="stylesheet" href="styles-v2.2.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v2.0</span>
+          <span class="version">v2.2</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -215,7 +215,7 @@
         <div class="two-col">
           <div>
             <label for="pidPValue">P設定値</label>
-            <input id="pidPValue" type="text" inputmode="text" step="any" value="2" />
+            <input id="pidPValue" type="text" inputmode="text" step="any" value="100" />
           </div>
           <div>
             <label>換算値</label>
@@ -231,7 +231,7 @@
         <p class="mini-note"><strong>逆動作（加熱）：</strong>PVがSPより低いほど出力が大きくなります。<br>
         <strong>正動作（冷却）：</strong>PVがSPより高いほど出力が大きくなります。</p>
 
-        <p class="mini-note"><strong>P演算：</strong>偏差[%]＝(SP−PV)÷入力スパン×100、P出力[%]＝Kp×偏差[%]（動作方向を反映、0〜100%に制限）。SP＝PVでは偏差0のためP出力は0%です。</p>
+        <p class="mini-note"><strong>一般的なP動作：</strong>SP＝PVを50%出力の中心とし、比例帯（PB）の幅で出力が0〜100%変化します。PB[%]は入力フルスパンに対する割合です。逆動作（加熱）はPV低下で出力UP、正動作（冷却）はPV上昇で出力UPします。</p>
 
         <label>出力レンジ</label>
         <div class="two-col">
@@ -239,7 +239,7 @@
           <div><label class="sub-label" for="pidOutHigh">上限</label><input id="pidOutHigh" type="text" inputmode="text" step="any" value="10" /></div>
         </div>
         <label for="pidOutUnit">出力単位</label>
-        <input id="pidOutUnit" type="text" value="V" placeholder="例：V / mA / %" />
+        <input id="pidOutUnit" type="text" value="" placeholder="例：V / mA / %" />
 
         <div class="result-card">
           <span>現在値でのP出力</span>
@@ -460,6 +460,6 @@
 
   </main>
 
-  <script src="app-v2.0.js"></script>
+  <script src="app-v2.2.js"></script>
 </body>
 </html>
