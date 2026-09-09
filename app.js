@@ -1,8 +1,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "1.2";
-const APP_BUILD = "ios-pwa-update-fix-1";
+const APP_VERSION = "1.3";
+const APP_BUILD = "update-test-v1.3";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
