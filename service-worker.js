@@ -1,4 +1,4 @@
-const CACHE="ctool-v1.0-r2";
+const CACHE="ctool-v1.1-r3";
 const ASSETS=["./","index.html","styles.css","app.js","manifest.json","icon.svg"];
 
 async function freshPrecache(){

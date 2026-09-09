@@ -1,8 +1,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "1.0";
-const APP_BUILD = "release-r2";
+const APP_VERSION = "1.1";
+const APP_BUILD = "release-r3";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
