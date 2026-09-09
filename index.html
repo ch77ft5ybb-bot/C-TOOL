@@ -12,11 +12,17 @@
 <body>
   <header class="topbar">
     <div class="brand-row">
-      <div>
-        <h1>C-TOOL</h1>
+      <div class="brand-main">
+        <div class="title-row">
+          <h1>C-TOOL</h1>
+          <span class="version">v3.5</span>
+        </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
-      <div class="version">v3.1</div>
+      <div class="header-update-area">
+        <button id="checkUpdateBtn" class="header-update-btn" type="button" aria-label="最新版を確認" title="最新版を確認"><span class="update-icon">↻</span><span>更新</span></button>
+        <span id="updateStatus" class="header-update-status" aria-live="polite"></span>
+      </div>
     </div>
   </header>
 
@@ -49,16 +55,17 @@
         <button class="menu-card" data-view="pt100View">
           <span class="icon">🌡️</span><span>Pt100換算</span><small>温度 ↔ 抵抗値</small>
         </button>
-        <button class="menu-card" data-view="modbusView">
-          <span class="icon">🧩</span><span>Modbus補助</span><small>40001 / Offset換算</small>
-        </button>
         <button class="menu-card" data-view="timerView">
-          <span class="icon">⏱️</span><span>PLCタイマ</span><small>設定値 ↔ 時間</small>
+          <span class="icon">⏱️</span><span>時間換算</span><small>ms / 秒 / 分 / 時間 / 日</small>
+        </button>
+        <button class="menu-card" data-view="clockView">
+          <span class="icon">🕒</span><span>時計・ストップウォッチ</span><small>オンライン時刻 / 計測</small>
         </button>
         <button class="menu-card" data-view="freqView">
           <span class="icon">🌀</span><span>周波数・回転数</span><small>Hz / rpm / 極数</small>
         </button>
       </div>
+
     </section>
 
     <section id="rangeView" class="view">
@@ -364,58 +371,70 @@
       </div>
     </section>
 
-    <section id="modbusView" class="view">
-      <div class="section-head">
-        <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>Modbus補助</h2><p>表記アドレスとPDUオフセットを整理</p></div>
-      </div>
-      <div class="panel">
-        <label for="modbusType">レジスタ種別</label>
-        <select id="modbusType">
-          <option value="4">Holding Register (4xxxx)</option>
-          <option value="3">Input Register (3xxxx)</option>
-          <option value="1">Discrete Input (1xxxx)</option>
-          <option value="0">Coil (0xxxx)</option>
-        </select>
-        <label for="modbusRef">表記アドレス</label>
-        <input id="modbusRef" type="number" inputmode="numeric" step="1" value="40001">
-        <div class="result-card">
-          <span>PDUオフセット</span><strong id="modbusOffset">0</strong><em id="modbusHex">HEX: 0000</em>
-        </div>
-        <label for="modbusOffsetInput">オフセットから逆算</label>
-        <input id="modbusOffsetInput" type="number" inputmode="numeric" step="1" value="0">
-        <div class="conversion-list">
-          <div class="conv-row"><span>表記アドレス</span><strong id="modbusRefBack">40001</strong></div>
-          <div class="conv-row"><span>HEX</span><strong id="modbusOffsetHex">0000</strong></div>
-        </div>
-        <p class="note warn-note">メーカーによって0始まり/1始まりや表記慣例が異なります。通信仕様書を優先してください。</p>
-      </div>
-    </section>
 
     <section id="timerView" class="view">
       <div class="section-head">
         <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>PLCタイマ</h2><p>設定値と実時間を相互換算</p></div>
+        <div><h2>時間換算</h2><p>入力した時間を各単位へ一括換算</p></div>
       </div>
       <div class="panel">
-        <label for="timerBase">タイマ基準</label>
-        <select id="timerBase">
-          <option value="0.1">100 ms</option>
-          <option value="0.01">10 ms</option>
-          <option value="0.001">1 ms</option>
-          <option value="1">1 s</option>
-        </select>
-        <label for="timerCount">設定値</label>
-        <input id="timerCount" type="number" inputmode="numeric" step="1" value="100">
+        <label for="timeValue">時間</label>
+        <div class="two-col">
+          <input id="timeValue" type="number" inputmode="decimal" step="any" value="100">
+          <select id="timeUnit">
+            <option value="ms">ミリ秒 (ms)</option>
+            <option value="s">秒 (s)</option>
+            <option value="min" selected>分 (min)</option>
+            <option value="h">時間 (h)</option>
+            <option value="day">日 (day)</option>
+          </select>
+        </div>
         <div class="result-card">
-          <span>実時間</span><strong id="timerTime">10.000 s</strong><em id="timerHuman">0分 10.000秒</em>
+          <span>秒換算</span><strong id="timeMainResult">6,000 秒</strong><em id="timeHumanResult">1時間 40分</em>
         </div>
-        <label for="timerSeconds">実時間から設定値</label>
-        <div class="input-with-unit"><input id="timerSeconds" type="number" inputmode="decimal" step="any" value="10"><span>s</span></div>
         <div class="conversion-list">
-          <div class="conv-row"><span>必要設定値</span><strong id="timerCountBack">100</strong></div>
-          <div class="conv-row"><span>丸め誤差</span><strong id="timerError">0.000 s</strong></div>
+          <div class="conv-row"><span>ミリ秒</span><strong id="timeMs">6,000,000 ms</strong></div>
+          <div class="conv-row"><span>秒</span><strong id="timeSec">6,000 s</strong></div>
+          <div class="conv-row"><span>分</span><strong id="timeMin">100 min</strong></div>
+          <div class="conv-row"><span>時間</span><strong id="timeHour">1.666667 h</strong></div>
+          <div class="conv-row"><span>日</span><strong id="timeDay">0.069444 day</strong></div>
         </div>
+        <p class="note">例：100分 → 6,000秒、500ms → 0.5秒。入力単位を選ぶだけで全単位を同時表示します。</p>
+      </div>
+    </section>
+
+    <section id="clockView" class="view">
+      <div class="section-head">
+        <button class="back-btn" data-view="homeView">←</button>
+        <div><h2>時計・ストップウォッチ</h2><p>オンライン補正時刻と経過時間を表示</p></div>
+      </div>
+
+      <div class="panel">
+        <div class="clock-head-row">
+          <div>
+            <label>オンライン補正時刻</label>
+            <p class="mini-note">通信先サーバーの時刻で端末時計を補正</p>
+          </div>
+          <button id="syncClockBtn" class="small-action-btn" type="button">時刻同期</button>
+        </div>
+        <div class="result-card clock-card">
+          <span id="clockSyncState">未同期</span>
+          <strong id="onlineClock">--:--:--.---</strong>
+          <em id="onlineDate">オンライン時のみ同期できます</em>
+        </div>
+        <p class="note">サーバー応答時刻と通信往復時間から補正します。通信遅延やサーバーの時刻精度により誤差は残るため、校正用の標準時計ではありません。</p>
+      </div>
+
+      <div class="panel">
+        <label>ストップウォッチ</label>
+        <div class="stopwatch-display" id="stopwatchDisplay">00:00:00.000</div>
+        <div class="stopwatch-actions">
+          <button id="stopwatchStartBtn" class="primary-btn" type="button">スタート</button>
+          <button id="stopwatchLapBtn" class="secondary-btn" type="button" disabled>ラップ</button>
+          <button id="stopwatchResetBtn" class="secondary-btn" type="button">リセット</button>
+        </div>
+        <div id="lapList" class="lap-list"></div>
+        <p class="note">ストップウォッチは端末内の高精度タイマーを使うため、オフラインでも使用できます。</p>
       </div>
     </section>
 
