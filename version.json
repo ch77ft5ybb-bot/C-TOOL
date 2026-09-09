@@ -1,5 +1,5 @@
 {
-  "version": "1.7",
-  "build": "plc-word-bit-hex-source-dest",
+  "version": "1.8",
+  "build": "plc-source-device-sync",
   "released": "2026-09-09"
 }

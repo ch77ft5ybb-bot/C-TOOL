@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v1.7.css" />
+  <link rel="stylesheet" href="styles-v1.8.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v1.7</span>
+          <span class="version">v1.8</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -415,16 +415,8 @@
         <label>求めたい変換元</label>
         <div class="two-col">
           <div>
-            <label class="sub-label" for="plcTargetFromDevice">デバイス</label>
-            <select id="plcTargetFromDevice">
-              <option value="X">X（16進 / ビット）</option>
-              <option value="Y">Y（16進 / ビット）</option>
-              <option value="M">M（10進 / ビット）</option>
-              <option value="D">D（10進 / ワード）</option>
-              <option value="ZR">ZR（10進 / ワード）</option>
-              <option value="W">W（16進 / ワード）</option>
-              <option value="B">B（16進 / ビット）</option>
-            </select>
+            <label class="sub-label">デバイス</label>
+            <div class="static-field" id="plcTargetFromDeviceDisplay">X（基準元と連動）</div>
           </div>
           <div>
             <label class="sub-label" for="plcTargetFromNo">アドレス / bit</label>
@@ -622,6 +614,6 @@
 
   </main>
 
-  <script src="app-v1.7.js"></script>
+  <script src="app-v1.8.js"></script>
 </body>
 </html>
