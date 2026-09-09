@@ -1,8 +1,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "1.4";
-const APP_BUILD = "ios-clock-freeze-fix";
+const APP_VERSION = "1.5";
+const APP_BUILD = "clock-root-fix";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
@@ -468,173 +468,162 @@ function calcTime(){
   $(id).addEventListener("change",calcTime);
 });
 
-// ===== High-precision online corrected clock =====
-let clockOffsetMs=0, clockSynced=false, clockTimer=null;
+// ===== Clock: device time always works, online correction is optional =====
+let clockOffsetMs=0;
+let clockMode="device";
+let clockTimer=null;
+let clockSyncBusy=false;
+
+function formatClockDate(d){
+  try{
+    return new Intl.DateTimeFormat("ja-JP",{
+      year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"
+    }).format(d);
+  }catch{
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
+  }
+}
 
 function renderOnlineClock(){
-  if(!clockSynced) return;
+  const clockEl=$("onlineClock");
+  const dateEl=$("onlineDate");
+  if(!clockEl || !dateEl) return;
+
   const d=new Date(Date.now()+clockOffsetMs);
   const hh=String(d.getHours()).padStart(2,"0");
   const mm=String(d.getMinutes()).padStart(2,"0");
   const ss=String(d.getSeconds()).padStart(2,"0");
   const ms=String(d.getMilliseconds()).padStart(3,"0");
-  $("onlineClock").textContent=`${hh}:${mm}:${ss}.${ms}`;
-  $("onlineDate").textContent=new Intl.DateTimeFormat("ja-JP",{
-    year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"
-  }).format(d);
+
+  clockEl.textContent=`${hh}:${mm}:${ss}.${ms}`;
+  dateEl.textContent=
+    clockMode==="server"
+      ? `${formatClockDate(d)}　オンライン補正中`
+      : `${formatClockDate(d)}　端末時計`;
 }
 
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-function median(values){
-  const a=[...values].sort((x,y)=>x-y);
-  const n=a.length;
-  if(!n) return NaN;
-  return n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2;
+function startClockRenderer(){
+  renderOnlineClock();
+  if(clockTimer) clearInterval(clockTimer);
+  clockTimer=setInterval(renderOnlineClock,50);
 }
 
-async function clockSample(){
+function sleep(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
+
+async function getServerClockSample(){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),1800);
   const t0=Date.now();
   const p0=performance.now();
-  const controller=new AbortController();
-    const timeoutId=setTimeout(()=>controller.abort(),2500);
-    let res;
-    try{
-      res=await fetch(`./?clock_sync=${Date.now()}_${Math.random()}`,{
-        method:"HEAD",
-        cache:"no-store",
-        signal:controller.signal
-      });
-    }finally{
-      clearTimeout(timeoutId);
-    }
-  const p1=performance.now();
-  const t1=Date.now();
 
-  const dateHeader=res.headers.get("Date");
-  if(!res.ok || !dateHeader) throw new Error("time header unavailable");
+  try{
+    // GET is used instead of HEAD because iOS standalone PWAs can behave
+    // inconsistently with HEAD requests. version.json is tiny and same-origin.
+    const response=await fetch(`version.json?clock=${Date.now()}_${Math.random()}`,{
+      method:"GET",
+      cache:"no-store",
+      headers:{"Cache-Control":"no-cache"},
+      signal:controller.signal
+    });
 
-  const serverMs=Date.parse(dateHeader);
-  const rtt=p1-p0;
+    const p1=performance.now();
+    const t1=Date.now();
 
-  // HTTP Date is normally whole-second resolution. Treat the server timestamp
-  // as the center of that second to reduce systematic rounding bias.
-  const serverCenterMs=serverMs+500;
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
 
-  // Cristian-style midpoint estimate.
-  const clientMid=(t0+t1)/2;
-  const offset=serverCenterMs-clientMid;
+    const dateHeader=response.headers.get("Date");
+    if(!dateHeader) throw new Error("Date header unavailable");
 
-  return {offset,rtt,serverMs};
-}
+    const parsed=Date.parse(dateHeader);
+    if(!Number.isFinite(parsed)) throw new Error("Invalid Date header");
 
-function estimateClockAccuracy(samples, chosen){
-  const offsets=samples.map(s=>s.offset);
-  const med=median(offsets);
-  const deviations=offsets.map(v=>Math.abs(v-med));
-  const mad=median(deviations) || 0;
+    const rtt=p1-p0;
 
-  // Error budget:
-  // 1) half the best RTT: unknown one-way network asymmetry
-  // 2) HTTP Date quantization: ±500 ms
-  // 3) sample instability, using robust MAD-based allowance
-  const network=Math.max(0,chosen.rtt/2);
-  const quantization=500;
-  const instability=Math.max(0,1.4826*mad);
+    // HTTP Date is normally one-second resolution. Use the center of the
+    // represented second and the midpoint of the request round trip.
+    const serverCenter=parsed+500;
+    const clientMid=(t0+t1)/2;
 
-  const estimated=Math.ceil(network+quantization+instability);
-  return {
-    estimated,
-    network:Math.ceil(network),
-    quantization,
-    instability:Math.ceil(instability)
-  };
-}
-
-function setClockQuality(accuracyMs){
-  let quality="低";
-  if(accuracyMs<=550) quality="高";
-  else if(accuracyMs<=750) quality="中";
-  $("clockQuality").textContent=quality;
+    return {
+      offset:serverCenter-clientMid,
+      rtt
+    };
+  }finally{
+    clearTimeout(timeout);
+  }
 }
 
 async function syncOnlineClock(){
   const btn=$("syncClockBtn");
+  const state=$("clockSyncState");
+  if(clockSyncBusy) return;
+
   if(!navigator.onLine){
-    $("clockSyncState").textContent="オフライン";
-    $("onlineDate").textContent="オンライン時のみ同期できます";
+    clockMode="device";
+    clockOffsetMs=0;
+    if(state) state.textContent="端末時刻（オフライン）";
+    renderOnlineClock();
     return;
   }
 
-  btn.disabled=true;
-  $("clockSyncState").textContent="高精度同期中…";
-  $("clockAccuracy").textContent="計測中";
-  $("clockMinRtt").textContent="計測中";
-  $("clockQuality").textContent="計測中";
-  $("clockSamples").textContent="0 / 8";
-  $("clockAccuracyText").textContent="8回サンプリングしています";
-
-  const samples=[];
-  const total=8;
+  clockSyncBusy=true;
+  if(btn) btn.disabled=true;
+  if(state) state.textContent="同期中…";
 
   try{
-    for(let i=0;i<total;i++){
+    const samples=[];
+
+    // Three short samples are enough for a field-reference correction and
+    // keep the UI responsive on iPhone home-screen PWAs.
+    for(let i=0;i<3;i++){
       try{
-        const s=await clockSample();
-        samples.push(s);
-      }catch(e){}
-      $("clockSamples").textContent=`${samples.length} / ${total}`;
-      if(i<total-1) await sleep(120);
+        samples.push(await getServerClockSample());
+      }catch(err){
+        console.warn("Clock sample failed:",err);
+      }
+      if(i<2) await sleep(100);
     }
 
-    if(samples.length<3) throw new Error("not enough samples");
+    if(!samples.length) throw new Error("No usable clock samples");
 
-    // Prefer the fastest few responses; then reject offset outliers robustly.
-    const byRtt=[...samples].sort((a,b)=>a.rtt-b.rtt);
-    const pool=byRtt.slice(0,Math.min(5,byRtt.length));
-    const med=median(pool.map(s=>s.offset));
-    const mad=median(pool.map(s=>Math.abs(s.offset-med))) || 0;
-    const limit=Math.max(250,3*1.4826*mad);
-    let accepted=pool.filter(s=>Math.abs(s.offset-med)<=limit);
-    if(!accepted.length) accepted=[pool[0]];
+    samples.sort((a,b)=>a.rtt-b.rtt);
+    const chosen=samples[0];
 
-    const chosen=[...accepted].sort((a,b)=>a.rtt-b.rtt)[0];
     clockOffsetMs=chosen.offset;
-    clockSynced=true;
-
-    const acc=estimateClockAccuracy(accepted,chosen);
-    const minRtt=Math.min(...samples.map(s=>s.rtt));
-
-    $("clockSyncState").textContent="同期済み";
-    $("clockAccuracy").textContent=`±${acc.estimated} ms`;
-    $("clockMinRtt").textContent=`${Math.round(minRtt)} ms`;
-    $("clockSamples").textContent=`${accepted.length} / ${total}`;
-    setClockQuality(acc.estimated);
-    $("clockAccuracyText").textContent=
-      `この同期結果では、現在時刻はおおむね ±${acc.estimated}ms 程度の範囲を目安にしてください`;
-
+    clockMode="server";
+    if(state) state.textContent=`オンライン補正済み（RTT ${Math.round(chosen.rtt)}ms）`;
     renderOnlineClock();
-    if(clockTimer) clearInterval(clockTimer);
-    clockTimer=setInterval(renderOnlineClock,31);
 
-  }catch(e){
-    $("clockSyncState").textContent="同期失敗";
-    $("onlineDate").textContent="通信状態を確認して再度同期してください";
-    $("clockAccuracy").textContent="— ms";
-    $("clockMinRtt").textContent="— ms";
-    $("clockQuality").textContent="失敗";
-    $("clockAccuracyText").textContent="十分な同期サンプルを取得できませんでした";
+  }catch(err){
+    console.warn("Clock sync failed; using device clock:",err);
+    // Crucially: synchronization failure never stops the clock.
+    clockOffsetMs=0;
+    clockMode="device";
+    if(state) state.textContent="端末時刻（同期失敗）";
+    renderOnlineClock();
   }finally{
-    btn.disabled=false;
+    clockSyncBusy=false;
+    if(btn) btn.disabled=false;
   }
 }
 
-$("syncClockBtn").addEventListener("click",syncOnlineClock);
-window.addEventListener("online",()=>syncOnlineClock());
-window.addEventListener("offline",()=>{
-  $("clockSyncState").textContent="オフライン";
-  $("clockQuality").textContent="オフライン";
+const syncClockBtn=$("syncClockBtn");
+if(syncClockBtn) syncClockBtn.addEventListener("click",syncOnlineClock);
+
+window.addEventListener("online",()=>{
+  const state=$("clockSyncState");
+  if(clockMode==="device" && state) state.textContent="端末時刻";
 });
+window.addEventListener("offline",()=>{
+  clockMode="device";
+  clockOffsetMs=0;
+  const state=$("clockSyncState");
+  if(state) state.textContent="端末時刻（オフライン）";
+  renderOnlineClock();
+});
+
+// The clock starts immediately and does not depend on network access.
+startClockRenderer();
 
 // ===== Stopwatch =====
 let swRunning=false, swStartPerf=0, swAccumulated=0, swRaf=0, lapNo=0;

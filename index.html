@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v1.4</span>
+          <span class="version">v1.5</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -406,23 +406,23 @@
     <section id="clockView" class="view">
       <div class="section-head">
         <button class="back-btn" data-view="homeView">←</button>
-        <div><h2>時計・ストップウォッチ</h2><p>オンライン補正時刻と経過時間を表示</p></div>
+        <div><h2>時計・ストップウォッチ</h2><p>端末時刻＋オンライン補正 / 経過時間を表示</p></div>
       </div>
 
       <div class="panel">
         <div class="clock-head-row">
           <div>
-            <label>オンライン補正時刻</label>
-            <p class="mini-note">通信先サーバーの時刻で端末時計を補正</p>
+            <label>現在時刻</label>
+            <p class="mini-note">通常は端末時刻を表示。必要な時だけオンライン補正</p>
           </div>
           <button id="syncClockBtn" class="small-action-btn" type="button">時刻同期</button>
         </div>
         <div class="result-card clock-card">
-          <span id="clockSyncState">未同期</span>
-          <strong id="onlineClock">--:--:--.---</strong>
-          <em id="onlineDate">オンライン時のみ同期できます</em>
+          <span id="clockSyncState">端末時刻</span>
+          <strong id="onlineClock">00:00:00.000</strong>
+          <em id="onlineDate">端末時計で表示中</em>
         </div>
-        <p class="note">サーバー応答時刻と通信往復時間から補正します。通信遅延やサーバーの時刻精度により誤差は残るため、校正用の標準時計ではありません。</p>
+        <p class="note">時計は端末時刻で常時動作します。「時刻同期」を押すと通信先サーバーのDateヘッダーを使って補正を試みます。補正に失敗しても端末時計表示は継続します。校正用の標準時計ではありません。</p>
       </div>
 
       <div class="panel">

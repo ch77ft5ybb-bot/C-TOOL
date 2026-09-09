@@ -1,5 +1,5 @@
 {
-  "version": "1.4",
-  "build": "ios-clock-freeze-fix",
+  "version": "1.5",
+  "build": "clock-root-fix",
   "released": "2026-09-09"
 }
