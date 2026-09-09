@@ -2,34 +2,73 @@
 const $ = (id) => document.getElementById(id);
 
 const APP_VERSION = "1.0";
+const APP_BUILD = "release-r2";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
   const status=$("updateStatus"), btn=$("checkUpdateBtn");
   if(status) status.textContent=message;
   if(!btn) return;
+
   btn.classList.toggle("is-current", state==="current");
   btn.classList.toggle("is-updating", state==="updating");
   btn.disabled=state==="updating";
-  btn.textContent="↻";
-  btn.setAttribute("aria-label", state==="updating" ? "更新確認中" : state==="current" ? "最新版です" : "最新版を確認");
+
+  // 「↻ 更新」のDOMは壊さず、状態だけ変更する。
+  const icon=btn.querySelector(".update-icon");
+  if(icon) icon.textContent="↻";
+
+  const label =
+    state==="updating" ? "更新確認中" :
+    state==="current" ? "最新版です" :
+    "最新版を確認";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("title", label);
 }
 
-async function getRemoteAppVersion(){
+async function getRemoteAppInfo(){
   const url=`app.js?version_check=${Date.now()}`;
   const response=await fetch(url,{cache:"no-store"});
   if(!response.ok) throw new Error(`HTTP ${response.status}`);
+
   const text=await response.text();
-  const match=text.match(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']/);
-  return match ? match[1] : null;
+  const version=text.match(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']/)?.[1] || null;
+  const build=text.match(/const\s+APP_BUILD\s*=\s*["']([^"']+)["']/)?.[1] || null;
+  return {version,build};
 }
 
 async function forceServiceWorkerUpdate(){
   if(!("serviceWorker" in navigator)) return null;
+
   let reg=await navigator.serviceWorker.getRegistration();
-  if(!reg) reg=await navigator.serviceWorker.register("service-worker.js",{updateViaCache:"none"});
+  if(!reg){
+    reg=await navigator.serviceWorker.register("service-worker.js",{updateViaCache:"none"});
+  }
+
   await reg.update();
+
+  if(reg.waiting){
+    reg.waiting.postMessage({type:"SKIP_WAITING"});
+  }
   return reg;
+}
+
+function waitForControllerChange(timeoutMs=3500){
+  return new Promise(resolve=>{
+    if(!("serviceWorker" in navigator)) return resolve(false);
+
+    let done=false;
+    const finish=value=>{
+      if(done) return;
+      done=true;
+      clearTimeout(timer);
+      navigator.serviceWorker.removeEventListener("controllerchange",onChange);
+      resolve(value);
+    };
+    const onChange=()=>finish(true);
+    const timer=setTimeout(()=>finish(false),timeoutMs);
+    navigator.serviceWorker.addEventListener("controllerchange",onChange,{once:true});
+  });
 }
 
 async function checkForAppUpdate(){
@@ -37,34 +76,45 @@ async function checkForAppUpdate(){
     setUpdateUi("単体HTMLでは更新確認を使用しません");
     return;
   }
+
   if(!navigator.onLine){
     setUpdateUi(`現在 v${APP_VERSION} ・ オフラインのため確認できません`);
     return;
   }
+
   setUpdateUi("最新版を確認しています…","updating");
+
   try{
-    const remoteVersion=await getRemoteAppVersion();
-    if(!remoteVersion){
+    const remote=await getRemoteAppInfo();
+    if(!remote.version){
       setUpdateUi("更新情報を取得できませんでした");
       return;
     }
-    if(remoteVersion===APP_VERSION){
+
+    const sameVersion=remote.version===APP_VERSION;
+    const sameBuild=!remote.build || remote.build===APP_BUILD;
+
+    if(sameVersion && sameBuild){
       await forceServiceWorkerUpdate();
       setUpdateUi(`v${APP_VERSION} が最新版です`,"current");
       setTimeout(()=>setUpdateUi(""),2200);
       return;
     }
-    setUpdateUi(`v${remoteVersion} を取得しています…`,"updating");
+
+    setUpdateUi(`v${remote.version} を更新しています…`,"updating");
     updateReloadPending=true;
+
+    const controllerWait=waitForControllerChange();
     await forceServiceWorkerUpdate();
-    // controllerchange が来ない環境でも、ネットワーク優先で最新版を再取得する。
-    setTimeout(()=>window.location.reload(),1800);
+    await controllerWait;
+
+    window.location.reload();
+
   }catch(err){
     console.error("C-TOOL update check failed",err);
-    setUpdateUi("更新確認に失敗しました。通信状態を確認してください");
+    setUpdateUi("更新確認に失敗しました。もう一度押してください");
   }
 }
-
 
 function showView(id){
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
