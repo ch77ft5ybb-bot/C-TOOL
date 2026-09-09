@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
-  "build": "official-release-p-bias",
+  "version": "1.2",
+  "build": "plc-data-address-usage",
   "released": "2026-09-09"
 }
