@@ -1,5 +1,5 @@
 {
-  "version": "1.5",
-  "build": "plc-duplicate-id-live-fix",
+  "version": "1.7",
+  "build": "plc-word-bit-hex-source-dest",
   "released": "2026-09-09"
 }

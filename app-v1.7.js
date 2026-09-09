@@ -2,7 +2,7 @@
 const $ = (id) => document.getElementById(id);
 
 const APP_VERSION = "1.7";
-const APP_BUILD = "p-no-sp-bias";
+const APP_BUILD = "plc-word-bit-hex-source-dest";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
@@ -218,6 +218,10 @@ function calculateDew(){
 ["dewTemp","dewRh","surfaceTemp"].forEach(id=>$(id).addEventListener("input",calculateDew));
 
 // ===== P action check =====
+// General P calculation:
+// MV[%] = Bias[%] + direction * Kp * error[%]
+// Kp = 100 / PB
+// Final MV is limited to 0..100%.
 function getPidKp(){
   const mode=$("pidPMode").value;
   const p=parseFloat($("pidPValue").value);
@@ -225,13 +229,14 @@ function getPidKp(){
   return mode==="kp" ? {kp:p,pb:100/p} : {kp:100/p,pb:p};
 }
 
-function pOutputForPv(pv, sp, low, high, kp, direction){
+function pOutputForPv(pv, sp, low, high, kp, direction, bias){
   const span=high-low;
   const errorPct=(sp-pv)/span*100;
   const sign=direction==="heat" ? 1 : -1;
-  const raw=sign*kp*errorPct;
+  const pTerm=sign*kp*errorPct;
+  const raw=bias+pTerm;
   const clamped=Math.max(0,Math.min(100,raw));
-  return {errorPct,raw,clamped};
+  return {errorPct,pTerm,raw,clamped};
 }
 
 function mapPctToRange(pct, low, high){
@@ -243,13 +248,14 @@ function calcPAction(){
   const pv=parseFloat($("pidPv").value);
   const inLow=parseFloat($("pidInLow").value);
   const inHigh=parseFloat($("pidInHigh").value);
+  const bias=parseFloat($("pidBias").value);
   const outLow=parseFloat($("pidOutLow").value);
   const outHigh=parseFloat($("pidOutHigh").value);
   const unit=$("pidOutUnit").value.trim();
   const direction=$("pidDirection").value;
   const {kp,pb}=getPidKp();
 
-  const valid=[sp,pv,inLow,inHigh,outLow,outHigh,kp].every(Number.isFinite)
+  const valid=[sp,pv,inLow,inHigh,bias,outLow,outHigh,kp].every(Number.isFinite)
     && inHigh>inLow
     && outHigh!==outLow
     && kp>0;
@@ -267,7 +273,7 @@ function calcPAction(){
     ? `PB = ${pb.toFixed(2)} %`
     : `Kp = ${kp.toFixed(3)}`;
 
-  const now=pOutputForPv(pv,sp,inLow,inHigh,kp,direction);
+  const now=pOutputForPv(pv,sp,inLow,inHigh,kp,direction,bias);
   const mapped=mapPctToRange(now.clamped,outLow,outHigh);
   const suffix=unit?` ${unit}`:"";
   const errEng=sp-pv;
@@ -282,11 +288,13 @@ function calcPAction(){
   $("pidDetail").textContent=
     `偏差 ${errEng>=0?"+":""}${errEng.toFixed(3)}`
     + `（${now.errorPct>=0?"+":""}${now.errorPct.toFixed(2)}%）`
-    + ` / P演算 ${now.raw.toFixed(1)}%${sat}`;
+    + ` / P項 ${now.pTerm>=0?"+":""}${now.pTerm.toFixed(1)}%`
+    + ` / バイアス ${bias.toFixed(1)}%`
+    + ` / 演算前 ${now.raw.toFixed(1)}%${sat}`;
 
   const rows=[0,25,50,75,100].map(pos=>{
     const rowPv=inLow+(pos/100)*(inHigh-inLow);
-    const r=pOutputForPv(rowPv,sp,inLow,inHigh,kp,direction);
+    const r=pOutputForPv(rowPv,sp,inLow,inHigh,kp,direction,bias);
     const rowMapped=mapPctToRange(r.clamped,outLow,outHigh);
     const satMark=(r.raw<0||r.raw>100)?" *":"";
     return `<tr><td>${pos}%</td><td>${rowPv.toFixed(3)}</td>`
@@ -296,7 +304,7 @@ function calcPAction(){
   $("pidTableBody").innerHTML=rows;
 }
 
-["pidSp","pidPv","pidInLow","pidInHigh","pidPValue","pidOutLow","pidOutHigh","pidOutUnit"]
+["pidSp","pidPv","pidInLow","pidInHigh","pidPValue","pidBias","pidOutLow","pidOutHigh","pidOutUnit"]
   .forEach(id=>$(id).addEventListener("input",calcPAction));
 ["pidPMode","pidDirection"]
   .forEach(id=>$(id).addEventListener("change",calcPAction));
@@ -392,6 +400,300 @@ function invalidNum(){
 }
 ["numBase","numInput"].forEach(id=>{$(id).addEventListener("input",calcNum);$(id).addEventListener("change",calcNum);});
 
+// ===== PLC tools v1.7 =====
+const PLC_DEVICE_BASES={X:16,Y:16,W:16,B:16,M:10,D:10,ZR:10};
+
+// Devices whose address itself represents bits.
+const PLC_BIT_DEVICES=new Set(["X","Y","M","B"]);
+// Devices that can naturally be treated as 16-bit word + .bit.
+const PLC_WORD_DEVICES=new Set(["D","ZR","W"]);
+
+function plcDeviceBase(device){
+  return PLC_DEVICE_BASES[device] || 10;
+}
+
+function plcDeviceAddress(device,raw,allowBit=true){
+  const base=plcDeviceBase(device);
+  const text=String(raw||"").trim().toUpperCase().replace(/\s+/g,"");
+
+  // Optional .bit is accepted for all listed devices.
+  // Address portion follows the device radix, while .bit is always HEX 0..F.
+  const m=text.match(/^([0-9A-F]+)(?:\.([0-9A-F]))?$/);
+  if(!m) return null;
+
+  const digits=m[1];
+  const bitText=m[2];
+
+  if(base===16){
+    if(!/^[0-9A-F]+$/.test(digits)) return null;
+  }else{
+    if(!/^[0-9]+$/.test(digits)) return null;
+  }
+
+  const value=parseInt(digits,base);
+  const bit=bitText===undefined ? null : parseInt(bitText,16);
+
+  if(!Number.isSafeInteger(value)) return null;
+  if(bit!==null && (bit<0 || bit>15)) return null;
+  if(!allowBit && bit!==null) return null;
+
+  return {device,base,value,bit};
+}
+
+function plcFormat(device,value){
+  if(!Number.isSafeInteger(value) || value<0) return null;
+  return device + value.toString(plcDeviceBase(device)).toUpperCase();
+}
+
+function plcFormatWithOptionalBit(device,value,bit){
+  const a=plcFormat(device,value);
+  if(a===null) return null;
+  return bit===null ? a : a+"."+bit.toString(16).toUpperCase();
+}
+
+// Convert a device address to an absolute "point index".
+// - Bit device without .bit: one address step = one point.
+// - Any device with .bit: one address step = 16 points and .bit = 0..F.
+// - Word device without .bit: treated as word boundary (bit 0) when used in bit mapping.
+function plcPointIndex(addr, forceWordBit=false){
+  const usesWordBit = forceWordBit || addr.bit!==null || PLC_WORD_DEVICES.has(addr.device);
+  if(usesWordBit){
+    return addr.value*16 + (addr.bit ?? 0);
+  }
+  return addr.value;
+}
+
+function formatFromPointIndex(device,pointIndex,preferBit){
+  if(pointIndex<0 || !Number.isSafeInteger(pointIndex)) return null;
+
+  const shouldUseBit = preferBit || PLC_WORD_DEVICES.has(device);
+  if(shouldUseBit){
+    const word=Math.floor(pointIndex/16);
+    const bit=pointIndex%16;
+    return plcFormatWithOptionalBit(device,word,bit);
+  }
+  return plcFormat(device,pointIndex);
+}
+
+function calcPlcAddress(){
+  const mode=$("plcMapMode").value;
+
+  const fromDev=$("plcBaseFromDevice").value;
+  const toDev=$("plcBaseToDevice").value;
+  const targetDev=$("plcTargetFromDevice").value;
+
+  const baseFrom=plcDeviceAddress(fromDev,$("plcBaseFromNo").value,true);
+  const targetFrom=plcDeviceAddress(targetDev,$("plcTargetFromNo").value,true);
+
+  if(!baseFrom || !targetFrom){
+    $("plcAddressResult").textContent="—";
+    $("plcAddressDetail").textContent="変換元アドレスを確認してください。";
+    return;
+  }
+
+  if(mode==="bitToWord"){
+    const baseTo=plcDeviceAddress(toDev,$("plcBaseToNo").value,true);
+    if(!baseTo){
+      $("plcAddressResult").textContent="—";
+      $("plcAddressDetail").textContent="変換先アドレスを確認してください。";
+      return;
+    }
+
+    // Source offset is calculated in bit-points.
+    // If source uses .bit (e.g. D100.A), its word address advances by 16 points.
+    const sourceUsesBit = baseFrom.bit!==null || targetFrom.bit!==null || PLC_WORD_DEVICES.has(fromDev);
+    const baseFromPoint=plcPointIndex(baseFrom,sourceUsesBit);
+    const targetFromPoint=plcPointIndex(targetFrom,sourceUsesBit);
+    const offset=targetFromPoint-baseFromPoint;
+
+    // Destination is always evaluated as a word.bit coordinate in this mode.
+    const baseToPoint=plcPointIndex(baseTo,true);
+    const resultPoint=baseToPoint+offset;
+    const result=formatFromPointIndex(toDev,resultPoint,true);
+
+    $("plcAddressResult").textContent=result || "—";
+    $("plcAddressDetail").textContent=result
+      ? `${plcFormatWithOptionalBit(fromDev,baseFrom.value,baseFrom.bit)} → ${plcFormatWithOptionalBit(toDev,baseTo.value,baseTo.bit ?? 0)} / ${plcFormatWithOptionalBit(targetDev,targetFrom.value,targetFrom.bit)} は ${offset>=0?"+":""}${offset}点 → ${result}`
+      : "変換結果が負アドレスです。";
+    return;
+  }
+
+  // Linear mode:
+  // If either side of the source uses .bit, calculate offset in bit-points.
+  // Otherwise calculate normal address offset.
+  const sourceUsesBit = baseFrom.bit!==null || targetFrom.bit!==null;
+  let offset;
+  if(sourceUsesBit){
+    offset=plcPointIndex(targetFrom,true)-plcPointIndex(baseFrom,true);
+  }else{
+    offset=targetFrom.value-baseFrom.value;
+  }
+
+  const baseTo=plcDeviceAddress(toDev,$("plcBaseToNo").value,true);
+  if(!baseTo){
+    $("plcAddressResult").textContent="—";
+    $("plcAddressDetail").textContent="変換先アドレスを確認してください。";
+    return;
+  }
+
+  let result;
+  if(sourceUsesBit || baseTo.bit!==null){
+    const resultPoint=plcPointIndex(baseTo,true)+offset;
+    result=formatFromPointIndex(toDev,resultPoint,true);
+  }else{
+    result=plcFormat(toDev,baseTo.value+offset);
+  }
+
+  $("plcAddressResult").textContent=result || "—";
+  $("plcAddressDetail").textContent=result
+    ? `${plcFormatWithOptionalBit(fromDev,baseFrom.value,baseFrom.bit)} → ${plcFormatWithOptionalBit(toDev,baseTo.value,baseTo.bit)} / ${plcFormatWithOptionalBit(targetDev,targetFrom.value,targetFrom.bit)} は ${offset>=0?"+":""}${offset}点 → ${result}`
+    : "変換結果が負アドレスです。";
+}
+
+const PLC_DATA_TYPES={
+  i16:{label:"16bit 符号あり整数（INT）",bits:16,words:1,kind:"signed"},
+  u16:{label:"16bit 符号なし整数（UINT）",bits:16,words:1,kind:"unsigned"},
+  i32:{label:"32bit 符号あり整数（DINT）",bits:32,words:2,kind:"signed"},
+  u32:{label:"32bit 符号なし整数（UDINT）",bits:32,words:2,kind:"unsigned"},
+  f32:{label:"単精度浮動小数点（REAL / FLOAT）",bits:32,words:2,kind:"float32"},
+  i64:{label:"64bit 符号あり整数（LINT）",bits:64,words:4,kind:"signed"},
+  u64:{label:"64bit 符号なし整数（ULINT）",bits:64,words:4,kind:"unsigned"},
+  f64:{label:"倍精度浮動小数点（LREAL / DOUBLE）",bits:64,words:4,kind:"float64"}
+};
+
+function parseBigIntValue(text){
+  const s=String(text||"").trim();
+  if(!/^[+-]?(?:\d+|0[xX][0-9A-Fa-f]+)$/.test(s)) return null;
+  try{return BigInt(s);}catch{return null;}
+}
+function packedValue(type,text){
+  const def=PLC_DATA_TYPES[type];
+  if(!def) return null;
+
+  if(def.kind==="float32" || def.kind==="float64"){
+    const n=Number(String(text||"").trim());
+    if(!Number.isFinite(n)) return null;
+
+    if(def.kind==="float32"){
+      const buf=new ArrayBuffer(4);
+      const dv=new DataView(buf);
+      dv.setFloat32(0,n,false);
+      return BigInt(dv.getUint32(0,false));
+    }
+
+    const buf=new ArrayBuffer(8);
+    const dv=new DataView(buf);
+    dv.setFloat64(0,n,false);
+    return (BigInt(dv.getUint32(0,false))<<32n) | BigInt(dv.getUint32(4,false));
+  }
+
+  const n=parseBigIntValue(text);
+  if(n===null) return null;
+
+  const bits=BigInt(def.bits);
+  const mod=1n<<bits;
+
+  if(def.kind==="signed"){
+    const min=-(1n<<(bits-1n));
+    const max=(1n<<(bits-1n))-1n;
+    if(n<min || n>max) return null;
+    return n<0 ? mod+n : n;
+  }
+
+  if(n<0n || n>=mod) return null;
+  return n;
+}
+
+function parseStorageAddress(raw){
+  const text=String(raw||"").trim().toUpperCase().replace(/\s+/g,"");
+  const m=text.match(/^([A-Z]+)([0-9A-F]+)$/);
+  if(!m) return null;
+  const device=m[1];
+  const base=PLC_DEVICE_BASES[device] || 10;
+  const digits=m[2];
+  if(base===16 ? !/^[0-9A-F]+$/.test(digits) : !/^[0-9]+$/.test(digits)) return null;
+  const value=parseInt(digits,base);
+  return Number.isSafeInteger(value) ? {device,value} : null;
+}
+
+function calcDataAddressUsage(){
+  const start=parseStorageAddress($("dataStartAddress").value);
+  const type=$("dataTypeSize").value;
+  const def=PLC_DATA_TYPES[type];
+
+  if(!start || !def){
+    $("dataAddressUsage").textContent="—";
+    $("dataAddressDetail").textContent="開始アドレスまたはデータ型を確認してください。";
+    $("dataPackedHex").textContent="—";
+    $("dataPackedInfo").textContent="";
+    $("dataWordRows").innerHTML="";
+    $("dataOnBits").textContent="—";
+    return;
+  }
+
+  const addresses=Array.from({length:def.words},(_,i)=>plcFormat(start.device,start.value+i));
+  const next=plcFormat(start.device,start.value+def.words);
+
+  $("dataAddressUsage").textContent=def.words===1
+    ? addresses[0]
+    : `${addresses[0]} ～ ${addresses[def.words-1]}`;
+  $("dataAddressDetail").textContent=`${def.label} / ${def.words}ワード使用 / 次の空き ${next}`;
+
+  const packed=packedValue(type,$("dataValue").value);
+  if(packed===null){
+    $("dataPackedHex").textContent="—";
+    $("dataPackedInfo").textContent="値の形式または範囲を確認してください。";
+    $("dataWordRows").innerHTML="";
+    $("dataOnBits").textContent="—";
+    return;
+  }
+
+  $("dataPackedHex").textContent="0x"+packed.toString(16).toUpperCase().padStart(def.bits/4,"0");
+  $("dataPackedInfo").textContent=`${def.bits}bit / ${def.label}`;
+
+  const lowFirstWords=Array.from(
+    {length:def.words},
+    (_,i)=>Number((packed>>BigInt(i*16))&0xFFFFn)
+  );
+  const words=$("dataWordOrder").value==="lowFirst"
+    ? lowFirstWords
+    : [...lowFirstWords].reverse();
+
+  const allOn=[];
+  $("dataWordRows").innerHTML=words.map((word,i)=>{
+    const hex=word.toString(16).toUpperCase().padStart(4,"0");
+    const bin=word.toString(2).padStart(16,"0").match(/.{4}/g).join(" ");
+    const bits=[];
+    for(let b=0;b<16;b++){
+      if((word&(1<<b))!==0){
+        bits.push(`${addresses[i]}.${b.toString(16).toUpperCase()}`);
+      }
+    }
+    allOn.push(...bits);
+    return `<tr><td>${addresses[i]}</td><td>${hex}</td><td class="mono-cell">${bin}</td><td>${bits.length?bits.join(", "):"—"}</td></tr>`;
+  }).join("");
+
+  $("dataOnBits").textContent=allOn.length?allOn.join(", "):"ONビットなし";
+  $("dataBitNote").textContent=
+    ($("dataWordOrder").value==="lowFirst"?"先頭アドレスに下位ワード":"先頭アドレスに上位ワード")
+    +" / ビット番号 .0 ～ .F";
+}
+
+// iPhone/Safari: update on typing and on control changes.
+["plcBaseFromNo","plcBaseToNo","plcTargetFromNo"].forEach(id=>{
+  $(id).addEventListener("input",calcPlcAddress);
+  $(id).addEventListener("change",calcPlcAddress);
+});
+["plcBaseFromDevice","plcBaseToDevice","plcTargetFromDevice","plcMapMode"].forEach(id=>{
+  $(id).addEventListener("change",calcPlcAddress);
+});
+["dataStartAddress","dataValue"].forEach(id=>{
+  $(id).addEventListener("input",calcDataAddressUsage);
+  $(id).addEventListener("change",calcDataAddressUsage);
+});
+["dataTypeSize","dataWordOrder"].forEach(id=>{
+  $(id).addEventListener("change",calcDataAddressUsage);
+});
 
 // ===== Pt100 =====
 let ptMode="tempToR";
