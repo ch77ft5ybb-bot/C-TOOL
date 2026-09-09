@@ -1,5 +1,5 @@
 {
-  "version": "1.3",
-  "build": "plc-tools-separated-float-labels",
+  "version": "1.4",
+  "build": "plc-bit-word-storage-rework",
   "released": "2026-09-09"
 }
