@@ -1,5 +1,5 @@
 {
-  "version": "1.6",
-  "build": "clock-cache-break",
+  "version": "1.7",
+  "build": "p-no-sp-bias",
   "released": "2026-09-09"
 }

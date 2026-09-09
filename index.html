@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v1.6.css" />
+  <link rel="stylesheet" href="styles-v1.7.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v1.6</span>
+          <span class="version">v1.7</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -229,11 +229,7 @@
           <option value="cool">PVがSPより高いほど出力UP（冷却など）</option>
         </select>
 
-        <label>SP一致時の出力</label>
-        <div class="segmented">
-          <button id="pidBias0" class="seg">0%</button>
-          <button id="pidBias50" class="seg active">50%</button>
-        </div>
+        <p class="mini-note"><strong>P演算：</strong>偏差[%]＝(SP−PV)÷入力スパン×100、P出力[%]＝Kp×偏差[%]（動作方向を反映、0〜100%に制限）。SP＝PVでは偏差0のためP出力は0%です。</p>
 
         <label>出力レンジ</label>
         <div class="two-col">
@@ -462,6 +458,6 @@
 
   </main>
 
-  <script src="app-v1.6.js"></script>
+  <script src="app-v1.7.js"></script>
 </body>
 </html>
