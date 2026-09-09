@@ -1,5 +1,5 @@
 {
-  "version": "1.7",
-  "build": "p-no-sp-bias",
+  "version": "1.8",
+  "build": "direction-labels",
   "released": "2026-09-09"
 }
