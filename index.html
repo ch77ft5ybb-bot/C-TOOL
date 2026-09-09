@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v1.4.css" />
+  <link rel="stylesheet" href="styles-v1.5.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v1.4</span>
+          <span class="version">v1.5</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -354,96 +354,6 @@
         </div>
       </div>
 
-      <div class="panel">
-        <h3>PLCアドレス変換</h3>
-        <p class="note">基準となる対応アドレスから、同じオフセット位置のアドレスを計算します。</p>
-
-        <label>基準対応</label>
-        <div class="two-col">
-          <div>
-            <label class="sub-label" for="plcBaseFrom">変換元</label>
-            <input id="plcBaseFrom" type="text" value="X100" autocomplete="off" spellcheck="false" />
-          </div>
-          <div>
-            <label class="sub-label" for="plcBaseTo">変換先</label>
-            <input id="plcBaseTo" type="text" value="M1000" autocomplete="off" spellcheck="false" />
-          </div>
-        </div>
-
-        <label for="plcTargetFrom">求めたい変換元アドレス</label>
-        <input id="plcTargetFrom" type="text" value="X160" autocomplete="off" spellcheck="false" />
-
-        <label>アドレス進数</label>
-        <div class="two-col">
-          <div>
-            <label class="sub-label" for="plcFromBase">変換元</label>
-            <select id="plcFromBase">
-              <option value="16" selected>HEX（X/Yなど）</option>
-              <option value="10">DEC</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-          <div>
-            <label class="sub-label" for="plcToBase">変換先</label>
-            <select id="plcToBase">
-              <option value="10" selected>DEC（M/Dなど）</option>
-              <option value="16">HEX</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="result-card">
-          <span>変換結果</span>
-          <strong id="plcAddressResult">M1096</strong>
-          <em id="plcAddressDetail">X100 → M1000 / X160 は +96点 → M1096</em>
-        </div>
-
-        <p class="note">例：三菱PLCで X100 → M1000 を基準にした場合、X160 は X100 から16進で+60（10進で+96点）なので M1096。機種・デバイスによりアドレス進数が異なるため、進数を選択してください。</p>
-      </div>
-
-      <div class="panel">
-        <h3>データ型・使用アドレス</h3>
-        <p class="note">D / W / R / ZR などのワードデバイスで、1つの値が何ワード占有するかを確認します。</p>
-
-        <label for="dataStartAddress">開始アドレス</label>
-        <input id="dataStartAddress" type="text" value="D100" autocomplete="off" spellcheck="false" />
-
-        <div class="two-col">
-          <div>
-            <label class="sub-label" for="dataAddressBase">アドレス進数</label>
-            <select id="dataAddressBase">
-              <option value="10" selected>DEC</option>
-              <option value="16">HEX</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-          <div>
-            <label class="sub-label" for="dataTypeSize">データ型</label>
-            <select id="dataTypeSize">
-              <option value="1">1ワード（16bit）</option>
-              <option value="2">2ワード（32bit整数）</option>
-              <option value="2f" selected>浮動小数点（REAL / 32bit）</option>
-              <option value="4">4ワード（64bit）</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="result-card">
-          <span>使用アドレス</span>
-          <strong id="dataAddressUsage">D100 ～ D101</strong>
-          <em id="dataAddressDetail">2ワード使用 / 次の空きアドレス D102</em>
-        </div>
-
-        <div class="conversion-list">
-          <div class="conv-row"><span>先頭ワード</span><strong id="dataWord0">D100</strong></div>
-          <div class="conv-row"><span>2ワード目</span><strong id="dataWord1">D101</strong></div>
-          <div class="conv-row"><span>3ワード目</span><strong id="dataWord2">—</strong></div>
-          <div class="conv-row"><span>4ワード目</span><strong id="dataWord3">—</strong></div>
-        </div>
-
-        <p class="note">一般的な三菱PLCでは、32bit整数・単精度浮動小数点は連続2ワード、64bit値は連続4ワードを使用します。例：REALをD100から使う場合はD100・D101を占有し、次はD102から使用できます。符号付き/符号なしで占有ワード数は変わりません。</p>
-      </div>
     </section>
 
     <section id="plcView" class="view">
@@ -454,7 +364,7 @@
 
       <div class="panel">
         <h3>PLCアドレス・ビット割付変換</h3>
-        <p class="note">X/Y/Mなどのビットデバイスを、D/ZR/R/Wなどのワード内ビットへ割り付ける場合に使えます。</p>
+        <p class="note">アドレス表記はデバイス種別から自動判定します。X / Y / W は16進、M / D / R / ZR は10進として扱います。</p>
 
         <label for="plcMapMode">変換方式</label>
         <select id="plcMapMode">
@@ -466,36 +376,16 @@
         <div class="two-col">
           <div>
             <label class="sub-label" for="plcBaseFrom">変換元</label>
-            <input id="plcBaseFrom" type="text" value="X100" autocomplete="off" spellcheck="false" />
+            <input id="plcBaseFrom" type="text" value="X100" autocomplete="off" spellcheck="false">
           </div>
           <div>
             <label class="sub-label" for="plcBaseTo">変換先</label>
-            <input id="plcBaseTo" type="text" value="D1000.0" autocomplete="off" spellcheck="false" />
+            <input id="plcBaseTo" type="text" value="D1000.0" autocomplete="off" spellcheck="false">
           </div>
         </div>
 
         <label for="plcTargetFrom">求めたい変換元</label>
-        <input id="plcTargetFrom" type="text" value="X105" autocomplete="off" spellcheck="false" />
-
-        <label>アドレス進数</label>
-        <div class="two-col">
-          <div>
-            <label class="sub-label" for="plcFromBase">変換元</label>
-            <select id="plcFromBase">
-              <option value="16" selected>HEX（X/Yなど）</option>
-              <option value="10">DEC</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-          <div>
-            <label class="sub-label" for="plcToBase">変換先ワード</label>
-            <select id="plcToBase">
-              <option value="10" selected>DEC（D/ZR/Rなど）</option>
-              <option value="16">HEX</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-        </div>
+        <input id="plcTargetFrom" type="text" value="X105" autocomplete="off" spellcheck="false">
 
         <div class="result-card">
           <span>変換結果</span>
@@ -503,42 +393,30 @@
           <em id="plcAddressDetail">X100 → D1000.0 / X105 は +5点 → D1000.5</em>
         </div>
 
-        <p class="note">例：X100 → D1000.0 を基準にすると、X105 → D1000.5、X10F → D1000.F、X110 → D1001.0。変換先は D / ZR / R / W など任意のワードデバイス名を入力できます。</p>
+        <p class="note">例：X100 → D1000.0なら、X105 → D1000.5、X10F → D1000.F、X110 → D1001.0。変換先はD / ZR / R / Wなどに変更できます。</p>
       </div>
 
       <div class="panel">
         <h3>データ型・使用アドレス / 格納状態</h3>
-        <p class="note">開始アドレスと値を入力すると、何ワード使うか、各ワードに何が入るか、どのビットがONになるかを表示します。</p>
+        <p class="note">開始アドレスと値を変更するたび、使用ワード、各ワードのHEX/BIN、ONビットを即時再計算します。</p>
 
         <label for="dataStartAddress">開始アドレス</label>
-        <input id="dataStartAddress" type="text" value="D100" autocomplete="off" spellcheck="false" />
+        <input id="dataStartAddress" type="text" value="D100" autocomplete="off" spellcheck="false">
 
-        <div class="two-col">
-          <div>
-            <label class="sub-label" for="dataAddressBase">アドレス進数</label>
-            <select id="dataAddressBase">
-              <option value="10" selected>DEC</option>
-              <option value="16">HEX</option>
-              <option value="8">OCT</option>
-            </select>
-          </div>
-          <div>
-            <label class="sub-label" for="dataTypeSize">データ型</label>
-            <select id="dataTypeSize">
-              <option value="i16" selected>16bit整数（INT / 1ワード）</option>
-              <option value="u16">16bit符号なし（UINT / 1ワード）</option>
-              <option value="i32">32bit整数（DINT / 2ワード）</option>
-              <option value="u32">32bit符号なし（UDINT / 2ワード）</option>
-              <option value="f32">単精度浮動小数点（REAL / FLOAT / 32bit / 2ワード）</option>
-              <option value="i64">64bit整数（LINT / 4ワード）</option>
-              <option value="u64">64bit符号なし（ULINT / 4ワード）</option>
-              <option value="f64">倍精度浮動小数点（LREAL / DOUBLE / 64bit / 4ワード）</option>
-            </select>
-          </div>
-        </div>
+        <label for="dataTypeSize">データ型</label>
+        <select id="dataTypeSize">
+          <option value="i16" selected>16bit整数（INT / 1ワード）</option>
+          <option value="u16">16bit符号なし（UINT / 1ワード）</option>
+          <option value="i32">32bit整数（DINT / 2ワード）</option>
+          <option value="u32">32bit符号なし（UDINT / 2ワード）</option>
+          <option value="f32">単精度浮動小数点（REAL / FLOAT / 32bit / 2ワード）</option>
+          <option value="i64">64bit整数（LINT / 4ワード）</option>
+          <option value="u64">64bit符号なし（ULINT / 4ワード）</option>
+          <option value="f64">倍精度浮動小数点（LREAL / DOUBLE / 64bit / 4ワード）</option>
+        </select>
 
         <label for="dataValue">格納する値</label>
-        <input id="dataValue" type="text" inputmode="text" value="5" autocomplete="off" spellcheck="false" />
+        <input id="dataValue" type="text" inputmode="text" value="5" autocomplete="off" spellcheck="false">
 
         <label for="dataWordOrder">ワード順</label>
         <select id="dataWordOrder">
@@ -549,13 +427,13 @@
         <div class="result-card">
           <span>使用アドレス</span>
           <strong id="dataAddressUsage">D100</strong>
-          <em id="dataAddressDetail">16bit整数 / 1ワード使用 / 次の空き D101</em>
+          <em id="dataAddressDetail">16bit整数（INT） / 1ワード使用 / 次の空き D101</em>
         </div>
 
         <div class="result-card compact-result">
           <span>全体ビットパターン</span>
           <strong id="dataPackedHex">0x0005</strong>
-          <em id="dataPackedInfo">16bit</em>
+          <em id="dataPackedInfo">16bit / 16bit整数（INT）</em>
         </div>
 
         <div class="plc-word-table-wrap">
@@ -564,7 +442,7 @@
               <tr><th>アドレス</th><th>HEX</th><th>BIN (16bit)</th><th>ONビット</th></tr>
             </thead>
             <tbody id="dataWordRows">
-              <tr><td>D100</td><td>0005</td><td>0000 0000 0000 0101</td><td>D100.0, D100.2</td></tr>
+              <tr><td>D100</td><td>0005</td><td class="mono-cell">0000 0000 0000 0101</td><td>D100.0, D100.2</td></tr>
             </tbody>
           </table>
         </div>
@@ -572,10 +450,10 @@
         <div class="result-card compact-result">
           <span>ONになっているビット</span>
           <strong id="dataOnBits">D100.0, D100.2</strong>
-          <em id="dataBitNote">ビット番号は .0 ～ .F で表示</em>
+          <em id="dataBitNote">先頭アドレスに下位ワード / ビット番号 .0 ～ .F</em>
         </div>
 
-        <p class="note">浮動小数点はIEEE 754として表示します。32bit REALは2ワード、64bit LREAL/DOUBLEは4ワードです。PLC・通信方式によってワード順が異なる場合があるため、ワード順を切り替えて確認できます。</p>
+        <p class="note">単精度REALはIEEE 754の32bit＝2ワード、倍精度LREAL/DOUBLEは64bit＝4ワード。ワード順も切り替えて確認できます。</p>
       </div>
     </section>
 
@@ -691,6 +569,6 @@
 
   </main>
 
-  <script src="app-v1.4.js"></script>
+  <script src="app-v1.5.js"></script>
 </body>
 </html>

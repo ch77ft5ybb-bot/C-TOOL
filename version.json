@@ -1,5 +1,5 @@
 {
-  "version": "1.4",
-  "build": "plc-bit-word-storage-rework",
+  "version": "1.5",
+  "build": "plc-duplicate-id-live-fix",
   "released": "2026-09-09"
 }
