@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#111827" />
   <title>C-TOOL</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles-v1.9.css" />
+  <link rel="stylesheet" href="styles-v2.0.css" />
   <link rel="apple-touch-icon" href="icon.svg" />
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div class="brand-main">
         <div class="title-row">
           <h1>C-TOOL</h1>
-          <span class="version">v1.9</span>
+          <span class="version">v2.0</span>
         </div>
         <p>制御・計装計算ツール <span class="gw-badge">GW</span></p>
       </div>
@@ -88,8 +88,8 @@
         </select>
 
         <div class="two-col">
-          <div><label for="rangeLow">レンジ下限</label><input id="rangeLow" type="number" inputmode="decimal" step="any" value="-20.0" /></div>
-          <div><label for="rangeHigh">レンジ上限</label><input id="rangeHigh" type="number" inputmode="decimal" step="any" value="80.0" /></div>
+          <div><label for="rangeLow">レンジ下限</label><input id="rangeLow" type="text" inputmode="text" step="any" value="-20.0" /></div>
+          <div><label for="rangeHigh">レンジ上限</label><input id="rangeHigh" type="text" inputmode="text" step="any" value="80.0" /></div>
         </div>
 
         <label for="unit">単位</label>
@@ -97,7 +97,7 @@
 
         <label id="inputValueLabel" for="inputValue">入力信号</label>
         <div class="input-with-unit">
-          <input id="inputValue" type="number" inputmode="decimal" step="any" value="12" />
+          <input id="inputValue" type="text" inputmode="text" step="any" value="12" />
           <span id="inputUnit">mA</span>
         </div>
 
@@ -129,13 +129,13 @@
       <div class="panel">
         <label for="heatFlow">流量</label>
         <div class="input-with-unit">
-          <input id="heatFlow" type="number" inputmode="decimal" step="any" value="100" />
+          <input id="heatFlow" type="text" inputmode="text" step="any" value="100" />
           <span>m³/h</span>
         </div>
 
         <div class="two-col">
-          <div><label for="heatT1">温度1</label><input id="heatT1" type="number" inputmode="decimal" step="any" value="7" /></div>
-          <div><label for="heatT2">温度2</label><input id="heatT2" type="number" inputmode="decimal" step="any" value="12" /></div>
+          <div><label for="heatT1">温度1</label><input id="heatT1" type="text" inputmode="text" step="any" value="7" /></div>
+          <div><label for="heatT2">温度2</label><input id="heatT2" type="text" inputmode="text" step="any" value="12" /></div>
         </div>
 
         <label for="heatMode">温度差</label>
@@ -168,13 +168,13 @@
 
       <div class="panel">
         <label for="dewTemp">乾球温度</label>
-        <div class="input-with-unit"><input id="dewTemp" type="number" inputmode="decimal" step="any" value="25" /><span>℃</span></div>
+        <div class="input-with-unit"><input id="dewTemp" type="text" inputmode="text" step="any" value="25" /><span>℃</span></div>
 
         <label for="dewRh">相対湿度</label>
-        <div class="input-with-unit"><input id="dewRh" type="number" inputmode="decimal" step="any" value="60" /><span>%RH</span></div>
+        <div class="input-with-unit"><input id="dewRh" type="text" inputmode="text" step="any" value="60" /><span>%RH</span></div>
 
         <label for="surfaceTemp">表面温度（任意）</label>
-        <div class="input-with-unit"><input id="surfaceTemp" type="number" inputmode="decimal" step="any" placeholder="例：15" /><span>℃</span></div>
+        <div class="input-with-unit"><input id="surfaceTemp" type="text" inputmode="text" step="any" placeholder="例：15" /><span>℃</span></div>
 
         <div class="result-card">
           <span>露点温度</span><strong id="dewResult">16.7 ℃</strong><em id="dewWarning"></em>
@@ -193,29 +193,29 @@
         <div class="two-col">
           <div>
             <label for="pidSp">設定値 SP</label>
-            <input id="pidSp" type="number" inputmode="decimal" step="any" value="50" />
+            <input id="pidSp" type="text" inputmode="text" step="any" value="50" />
           </div>
           <div>
             <label for="pidPv">現在値 PV</label>
-            <input id="pidPv" type="number" inputmode="decimal" step="any" value="40" />
+            <input id="pidPv" type="text" inputmode="text" step="any" value="40" />
           </div>
         </div>
 
         <label>入力値レンジ</label>
         <div class="two-col">
-          <div><label class="sub-label" for="pidInLow">下限</label><input id="pidInLow" type="number" inputmode="decimal" step="any" value="0" /></div>
-          <div><label class="sub-label" for="pidInHigh">上限</label><input id="pidInHigh" type="number" inputmode="decimal" step="any" value="100" /></div>
+          <div><label class="sub-label" for="pidInLow">下限</label><input id="pidInLow" type="text" inputmode="text" step="any" value="0" /></div>
+          <div><label class="sub-label" for="pidInHigh">上限</label><input id="pidInHigh" type="text" inputmode="text" step="any" value="100" /></div>
         </div>
 
         <label for="pidPMode">Pの指定方法</label>
         <select id="pidPMode">
           <option value="kp">Kp（比例ゲイン）</option>
-          <option value="pb">PB（比例帯 %）</option>
+          <option value="pb" selected>PB（比例帯 %）</option>
         </select>
         <div class="two-col">
           <div>
             <label for="pidPValue">P設定値</label>
-            <input id="pidPValue" type="number" inputmode="decimal" step="any" value="2" />
+            <input id="pidPValue" type="text" inputmode="text" step="any" value="2" />
           </div>
           <div>
             <label>換算値</label>
@@ -235,8 +235,8 @@
 
         <label>出力レンジ</label>
         <div class="two-col">
-          <div><label class="sub-label" for="pidOutLow">下限</label><input id="pidOutLow" type="number" inputmode="decimal" step="any" value="0" /></div>
-          <div><label class="sub-label" for="pidOutHigh">上限</label><input id="pidOutHigh" type="number" inputmode="decimal" step="any" value="10" /></div>
+          <div><label class="sub-label" for="pidOutLow">下限</label><input id="pidOutLow" type="text" inputmode="text" step="any" value="0" /></div>
+          <div><label class="sub-label" for="pidOutHigh">上限</label><input id="pidOutHigh" type="text" inputmode="text" step="any" value="10" /></div>
         </div>
         <label for="pidOutUnit">出力単位</label>
         <input id="pidOutUnit" type="text" value="V" placeholder="例：V / mA / %" />
@@ -284,7 +284,7 @@
           </div>
         </div>
         <label for="unitValue">値</label>
-        <input id="unitValue" type="number" inputmode="decimal" step="any" value="1" />
+        <input id="unitValue" type="text" inputmode="text" step="any" value="1" />
         <div class="result-card">
           <span>換算結果</span>
           <strong id="unitResult">—</strong>
@@ -300,7 +300,7 @@
       </div>
       <div class="panel">
         <label for="signalPercent">パーセント</label>
-        <div class="input-with-unit"><input id="signalPercent" type="number" inputmode="decimal" step="any" value="50" /><span>%</span></div>
+        <div class="input-with-unit"><input id="signalPercent" type="text" inputmode="text" step="any" value="50" /><span>%</span></div>
         <div class="quick-grid">
           <div class="quick-card"><span>4–20mA</span><strong id="quickMa">12.00 mA</strong></div>
           <div class="quick-card"><span>1–5V</span><strong id="quickV">3.00 V</strong></div>
@@ -361,7 +361,7 @@
           <button id="ptRToTempBtn" class="seg">抵抗 → 温度</button>
         </div>
         <label id="ptInputLabel" for="ptInput">温度</label>
-        <div class="input-with-unit"><input id="ptInput" type="number" inputmode="decimal" step="any" value="0"><span id="ptInputUnit">℃</span></div>
+        <div class="input-with-unit"><input id="ptInput" type="text" inputmode="text" step="any" value="0"><span id="ptInputUnit">℃</span></div>
         <div class="result-card">
           <span>換算結果</span><strong id="ptResult">100.000 Ω</strong><em id="ptNote"></em>
         </div>
@@ -378,7 +378,7 @@
       <div class="panel">
         <label for="timeValue">時間</label>
         <div class="two-col">
-          <input id="timeValue" type="number" inputmode="decimal" step="any" value="100">
+          <input id="timeValue" type="text" inputmode="text" step="any" value="100">
           <select id="timeUnit">
             <option value="ms">ミリ秒 (ms)</option>
             <option value="s">秒 (s)</option>
@@ -443,14 +443,14 @@
       </div>
       <div class="panel">
         <div class="two-col">
-          <div><label for="freqHz">周波数</label><div class="input-with-unit"><input id="freqHz" type="number" inputmode="decimal" step="any" value="50"><span>Hz</span></div></div>
+          <div><label for="freqHz">周波数</label><div class="input-with-unit"><input id="freqHz" type="text" inputmode="text" step="any" value="50"><span>Hz</span></div></div>
           <div><label for="freqPoles">極数</label><select id="freqPoles"><option>2</option><option selected>4</option><option>6</option><option>8</option><option>10</option><option>12</option></select></div>
         </div>
         <div class="result-card">
           <span>同期回転数</span><strong id="syncRpm">1500 rpm</strong><em id="freqFormula">120 × f ÷ P</em>
         </div>
         <label for="actualRpm">実回転数（任意）</label>
-        <div class="input-with-unit"><input id="actualRpm" type="number" inputmode="decimal" step="any" placeholder="例：1450"><span>rpm</span></div>
+        <div class="input-with-unit"><input id="actualRpm" type="text" inputmode="text" step="any" placeholder="例：1450"><span>rpm</span></div>
         <div class="conversion-list">
           <div class="conv-row"><span>すべり</span><strong id="slipPercent">—</strong></div>
           <div class="conv-row"><span>回転差</span><strong id="slipRpm">—</strong></div>
@@ -460,6 +460,6 @@
 
   </main>
 
-  <script src="app-v1.9.js"></script>
+  <script src="app-v2.0.js"></script>
 </body>
 </html>
