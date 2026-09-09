@@ -1,7 +1,7 @@
 
 const $ = (id) => document.getElementById(id);
 
-const APP_VERSION = "3.3";
+const APP_VERSION = "1.0";
 let updateReloadPending = false;
 
 function setUpdateUi(message, state="idle"){
@@ -154,7 +154,7 @@ function calculateHeat(){
   const kw=1.163*flow*dt;
   const out=$("heatOutput").value;
   let val=kw, unit="kW";
-  if(out==="MJh"){val=kw*3.6;unit="MJ/h";}
+  if(out==="MJh"){val=kw*1.0;unit="MJ/h";}
   else if(out==="GJh"){val=kw*0.0036;unit="GJ/h";}
   else if(out==="kcalh"){val=kw*860;unit="kcal/h";}
   const digits=Math.abs(val)>=1000?0:Math.abs(val)>=100?1:2;
@@ -274,10 +274,10 @@ const unitDefs = {
   flow: {
     units: ["m³/h","L/min","L/s","m³/min"],
     toBase: {
-      "m³/h": v=>v, "L/min": v=>v*0.06, "L/s": v=>v*3.6, "m³/min": v=>v*60
+      "m³/h": v=>v, "L/min": v=>v*0.06, "L/s": v=>v*1.0, "m³/min": v=>v*60
     },
     fromBase: {
-      "m³/h": v=>v, "L/min": v=>v/0.06, "L/s": v=>v/3.6, "m³/min": v=>v/60
+      "m³/h": v=>v, "L/min": v=>v/0.06, "L/s": v=>v/1.0, "m³/min": v=>v/60
     }
   }
 };
@@ -429,8 +429,9 @@ function calcTime(){
   $(id).addEventListener("change",calcTime);
 });
 
-// ===== Online corrected clock =====
+// ===== High-precision online corrected clock =====
 let clockOffsetMs=0, clockSynced=false, clockTimer=null;
+
 function renderOnlineClock(){
   if(!clockSynced) return;
   const d=new Date(Date.now()+clockOffsetMs);
@@ -439,8 +440,77 @@ function renderOnlineClock(){
   const ss=String(d.getSeconds()).padStart(2,"0");
   const ms=String(d.getMilliseconds()).padStart(3,"0");
   $("onlineClock").textContent=`${hh}:${mm}:${ss}.${ms}`;
-  $("onlineDate").textContent=new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"}).format(d);
+  $("onlineDate").textContent=new Intl.DateTimeFormat("ja-JP",{
+    year:"numeric",month:"2-digit",day:"2-digit",weekday:"short"
+  }).format(d);
 }
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function median(values){
+  const a=[...values].sort((x,y)=>x-y);
+  const n=a.length;
+  if(!n) return NaN;
+  return n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2;
+}
+
+async function clockSample(){
+  const t0=Date.now();
+  const p0=performance.now();
+  const res=await fetch(`./?clock_sync=${Date.now()}_${Math.random()}`,{
+    method:"HEAD",
+    cache:"no-store"
+  });
+  const p1=performance.now();
+  const t1=Date.now();
+
+  const dateHeader=res.headers.get("Date");
+  if(!res.ok || !dateHeader) throw new Error("time header unavailable");
+
+  const serverMs=Date.parse(dateHeader);
+  const rtt=p1-p0;
+
+  // HTTP Date is normally whole-second resolution. Treat the server timestamp
+  // as the center of that second to reduce systematic rounding bias.
+  const serverCenterMs=serverMs+500;
+
+  // Cristian-style midpoint estimate.
+  const clientMid=(t0+t1)/2;
+  const offset=serverCenterMs-clientMid;
+
+  return {offset,rtt,serverMs};
+}
+
+function estimateClockAccuracy(samples, chosen){
+  const offsets=samples.map(s=>s.offset);
+  const med=median(offsets);
+  const deviations=offsets.map(v=>Math.abs(v-med));
+  const mad=median(deviations) || 0;
+
+  // Error budget:
+  // 1) half the best RTT: unknown one-way network asymmetry
+  // 2) HTTP Date quantization: ±500 ms
+  // 3) sample instability, using robust MAD-based allowance
+  const network=Math.max(0,chosen.rtt/2);
+  const quantization=500;
+  const instability=Math.max(0,1.4826*mad);
+
+  const estimated=Math.ceil(network+quantization+instability);
+  return {
+    estimated,
+    network:Math.ceil(network),
+    quantization,
+    instability:Math.ceil(instability)
+  };
+}
+
+function setClockQuality(accuracyMs){
+  let quality="低";
+  if(accuracyMs<=550) quality="高";
+  else if(accuracyMs<=750) quality="中";
+  $("clockQuality").textContent=quality;
+}
+
 async function syncOnlineClock(){
   const btn=$("syncClockBtn");
   if(!navigator.onLine){
@@ -448,33 +518,76 @@ async function syncOnlineClock(){
     $("onlineDate").textContent="オンライン時のみ同期できます";
     return;
   }
+
   btn.disabled=true;
-  $("clockSyncState").textContent="同期中…";
+  $("clockSyncState").textContent="高精度同期中…";
+  $("clockAccuracy").textContent="計測中";
+  $("clockMinRtt").textContent="計測中";
+  $("clockQuality").textContent="計測中";
+  $("clockSamples").textContent="0 / 8";
+  $("clockAccuracyText").textContent="8回サンプリングしています";
+
+  const samples=[];
+  const total=8;
+
   try{
-    const t0=Date.now();
-    const res=await fetch(`./?clock_sync=${Date.now()}`,{method:"HEAD",cache:"no-store"});
-    const t1=Date.now();
-    const dateHeader=res.headers.get("Date");
-    if(!res.ok || !dateHeader) throw new Error("time header unavailable");
-    const serverMs=Date.parse(dateHeader);
-    // HTTP Date is normally second-resolution. Midpoint compensates roughly for network RTT.
-    clockOffsetMs=serverMs-((t0+t1)/2);
+    for(let i=0;i<total;i++){
+      try{
+        const s=await clockSample();
+        samples.push(s);
+      }catch(e){}
+      $("clockSamples").textContent=`${samples.length} / ${total}`;
+      if(i<total-1) await sleep(120);
+    }
+
+    if(samples.length<3) throw new Error("not enough samples");
+
+    // Prefer the fastest few responses; then reject offset outliers robustly.
+    const byRtt=[...samples].sort((a,b)=>a.rtt-b.rtt);
+    const pool=byRtt.slice(0,Math.min(5,byRtt.length));
+    const med=median(pool.map(s=>s.offset));
+    const mad=median(pool.map(s=>Math.abs(s.offset-med))) || 0;
+    const limit=Math.max(250,3*1.4826*mad);
+    let accepted=pool.filter(s=>Math.abs(s.offset-med)<=limit);
+    if(!accepted.length) accepted=[pool[0]];
+
+    const chosen=[...accepted].sort((a,b)=>a.rtt-b.rtt)[0];
+    clockOffsetMs=chosen.offset;
     clockSynced=true;
-    const rtt=t1-t0;
-    $("clockSyncState").textContent=`同期済み / RTT ${rtt}ms`;
+
+    const acc=estimateClockAccuracy(accepted,chosen);
+    const minRtt=Math.min(...samples.map(s=>s.rtt));
+
+    $("clockSyncState").textContent="同期済み";
+    $("clockAccuracy").textContent=`±${acc.estimated} ms`;
+    $("clockMinRtt").textContent=`${Math.round(minRtt)} ms`;
+    $("clockSamples").textContent=`${accepted.length} / ${total}`;
+    setClockQuality(acc.estimated);
+    $("clockAccuracyText").textContent=
+      `この同期結果では、現在時刻はおおむね ±${acc.estimated}ms 程度の範囲を目安にしてください`;
+
     renderOnlineClock();
     if(clockTimer) clearInterval(clockTimer);
     clockTimer=setInterval(renderOnlineClock,31);
+
   }catch(e){
     $("clockSyncState").textContent="同期失敗";
     $("onlineDate").textContent="通信状態を確認して再度同期してください";
+    $("clockAccuracy").textContent="— ms";
+    $("clockMinRtt").textContent="— ms";
+    $("clockQuality").textContent="失敗";
+    $("clockAccuracyText").textContent="十分な同期サンプルを取得できませんでした";
   }finally{
     btn.disabled=false;
   }
 }
+
 $("syncClockBtn").addEventListener("click",syncOnlineClock);
 window.addEventListener("online",()=>syncOnlineClock());
-window.addEventListener("offline",()=>{$("clockSyncState").textContent="オフライン";});
+window.addEventListener("offline",()=>{
+  $("clockSyncState").textContent="オフライン";
+  $("clockQuality").textContent="オフライン";
+});
 
 // ===== Stopwatch =====
 let swRunning=false, swStartPerf=0, swAccumulated=0, swRaf=0, lapNo=0;

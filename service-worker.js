@@ -1,4 +1,4 @@
-const CACHE="ctool-v3.5";
+const CACHE="ctool-v1.0";
 const ASSETS=["./","index.html","styles.css","app.js","manifest.json","icon.svg"];
 
 self.addEventListener("install",event=>{
